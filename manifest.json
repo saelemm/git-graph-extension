@@ -1,0 +1,21 @@
+{
+    "manifest_version": 3,
+    "name": "GitHub Git Graph",
+    "version": "1.0",
+    "description": "Visualize Git graphs on GitHub repository pages.",
+    "permissions": ["scripting", "storage"],
+    "host_permissions": ["https://github.com/*"],
+    "content_scripts": [
+        {
+          "matches": ["https://github.com/*/*"],
+          "js": ["dist/content.js"],
+            "css": ["styles.css"],
+            "type": "module",
+            "run_at": "document_idle"
+          }
+    ],
+    "action": {
+      "default_popup": "popup.html"
+    }
+  }
+  
