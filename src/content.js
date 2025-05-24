@@ -1,15 +1,15 @@
-import { addTabLink } from './github/addTabLink.js';
+import { observeTabInjection } from './github/observeTabInjection.js';
 import { addGraphPage } from './github/addGraphPage.js';
-import observeRouteChanges from './observerRouteChanges.js';
+import observeRouteChanges from './observeRouteChanges.js';
 
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
-  addTabLink();
+function init() {
+  observeTabInjection();
   addGraphPage();
   observeRouteChanges();
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', init);
 } else {
-  window.addEventListener('DOMContentLoaded', () => {
-    addTabLink();
-    addGraphPage();
-    observeRouteChanges();
-  });
+  init();
 }
