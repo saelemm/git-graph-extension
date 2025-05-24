@@ -1,41 +1,38 @@
+import { addGraphPage } from './addGraphPage.js';
+
 export function addTabLink() {
-  console.log('🔍 Looking for GitHub repo nav bar...');
+  console.log('🔍 Checking for repo nav to inject Git Graph tab...');
 
-  // Find the navigation bar more generically
-  const nav = document.querySelector('nav.UnderlineNav-body') || 
-              document.querySelector('nav[aria-label="Repository"]');
+  const firstTab = document.querySelector(
+    "body > div.logged-in.env-production.page-responsive > div.position-relative.header-wrapper.js-header-wrapper > header > div.AppHeader-localBar > nav > ul > li:nth-child(1)"
+  );
+  const navUl = firstTab?.parentElement;
 
-  const navUl = nav?.querySelector('ul');
   if (!navUl) {
-    console.log('⚠️ Could not find nav <ul> inside GitHub repo nav.');
+    console.warn('⚠️ Navigation UL not found.');
     return;
   }
 
-  if (document.querySelector('#graph-tab')) {
-    console.log('⏭️ Git Graph tab already exists.');
+  if (document.querySelector('li#graph-tab')) {
+    console.log('⛔ Graph tab already exists.');
     return;
   }
 
-  const firstTab = navUl.querySelector('li');
-  if (!firstTab) {
-    console.log('⚠️ First tab not found.');
-    return;
-  }
+  // Create new tab element
+  const li = document.createElement("li");
+  li.id = "graph-tab";
+  li.setAttribute("data-view-component", "true");
+  li.className = "d-inline-flex";
 
-  const li = document.createElement('li');
-  li.id = 'graph-tab';
-  li.className = 'd-inline-flex';
-  li.setAttribute('data-view-component', 'true');
-
-  const a = document.createElement('a');
-  a.id = 'graph-tab-link';
-  a.href = location.pathname.replace(/\/$/, '') + '/graphs/git-graph';
-  a.className = 'UnderlineNav-item no-wrap js-responsive-underlinenav-item';
-  a.setAttribute('data-tab-item', 'i1graph-tab');
-  a.setAttribute('data-view-component', 'true');
-  a.setAttribute('data-pjax', '#repo-content-pjax-container');
-  a.setAttribute('data-turbo-frame', 'repo-content-turbo-frame');
-
+  const a = document.createElement("a");
+  a.id = "graph-tab-link";
+  const repoBasePath = location.pathname.split('/').slice(0, 3).join('/');
+  a.href = repoBasePath + "/graphs/git-graph";
+  a.setAttribute("data-tab-item", "i1graph-tab");
+  a.setAttribute("data-view-component", "true");
+  a.setAttribute("data-pjax", "#repo-content-pjax-container");
+  a.setAttribute("data-turbo-frame", "repo-content-turbo-frame");
+  a.className = "UnderlineNav-item no-wrap js-responsive-underlinenav-item";
   a.innerHTML = `
     <svg aria-hidden="true" height="16" viewBox="0 0 16 16" width="16"
       class="octicon octicon-graph d-none d-sm-inline">
@@ -44,8 +41,18 @@ export function addTabLink() {
     <span>Git Graph</span>
   `;
 
+  // Prevent default nav behavior and render page manually
+  a.addEventListener('click', (e) => {
+    e.preventDefault();
+    const newUrl = a.href;
+    if (location.href !== newUrl) {
+      history.pushState(null, '', newUrl);
+      addGraphPage();
+    }
+  });
+
   li.appendChild(a);
   navUl.insertBefore(li, firstTab.nextSibling);
 
-  console.log('✅ Git Graph tab added.');
+  console.log('✅ Git Graph tab injected!');
 }

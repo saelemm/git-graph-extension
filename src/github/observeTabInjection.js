@@ -17,5 +17,5 @@ export function observeTabInjection() {
   });
 
   // Try once after delay (GitHub delays layout)
-  setTimeout(addTabLink, 1000);
+  setTimeout(addTabLink, 50);
 }
