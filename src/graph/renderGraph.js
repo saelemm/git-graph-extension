@@ -1,7 +1,8 @@
 import { fetchCommits } from './fetchCommits.js';
 
-export async function renderGraph(owner, repo) {
+export async function renderGraph(graphContainer, owner, repo) {
   const commits = await fetchCommits(owner, repo);
+  console.log(`Fetched commits : `+ commits.json());
   const container = document.getElementById('git-graph-container');
   if (!container) return;
 
