@@ -6,16 +6,18 @@ export async function renderGraph(container, owner, repo) {
   const commits = await fetchCommits(owner, repo);
 
   if (!container) return;
-
   container.innerHTML = '';
+  container.style.display = "flex";
+  const tabWrapper = document.createElement("div");
+  const graphWrapper = document.createElement("div");
 
-  commitTab(container, commits);
-
+  container.appendChild(graphWrapper);
+  container.appendChild(tabWrapper);
+  
   const options = {
     "orientation" : "vertical-reverse"
   }
-  const gitgraph = createGitgraph(container, options);
-
+  const gitgraph = createGitgraph(graphWrapper, options);
   const main = gitgraph.branch("main");
 
   commits.forEach((commit) => {
@@ -25,4 +27,7 @@ export async function renderGraph(container, owner, repo) {
       author: commit.commit.author.name,
     });
   });
+
+  commitTab(tabWrapper, commits);
+
 }
