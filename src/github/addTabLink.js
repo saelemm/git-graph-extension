@@ -3,22 +3,21 @@ import { addGraphPage } from './addGraphPage.js';
 export function addTabLink() {
   console.log('🔍 Checking for repo nav to inject Git Graph tab...');
 
-  const firstTab = document.querySelector(
-    "body > div.logged-in.env-production.page-responsive > div.position-relative.header-wrapper.js-header-wrapper > header > div.AppHeader-localBar > nav > ul > li:nth-child(1)"
-  );
-  const navUl = firstTab?.parentElement;
+  // Find the repository nav bar UL using GitHub's consistent class
+  const navUl = document.querySelector('nav.UnderlineNav > ul');
 
   if (!navUl) {
     console.warn('⚠️ Navigation UL not found.');
     return;
   }
 
-  if (document.querySelector('li#graph-tab')) {
+  // Ensure we don't double-inject
+  if (document.querySelector('#graph-tab')) {
     console.log('⛔ Graph tab already exists.');
     return;
   }
 
-  // Create new tab element
+  // Create the new <li> for our tab
   const li = document.createElement("li");
   li.id = "graph-tab";
   li.setAttribute("data-view-component", "true");
@@ -26,13 +25,17 @@ export function addTabLink() {
 
   const a = document.createElement("a");
   a.id = "graph-tab-link";
+
+  // Compute repo base from URL (e.g., /owner/repo)
   const repoBasePath = location.pathname.split('/').slice(0, 3).join('/');
-  a.href = repoBasePath + "/graphs/git-graph";
+  a.href = `${repoBasePath}/graphs/git-graph`;
+
   a.setAttribute("data-tab-item", "i1graph-tab");
   a.setAttribute("data-view-component", "true");
   a.setAttribute("data-pjax", "#repo-content-pjax-container");
   a.setAttribute("data-turbo-frame", "repo-content-turbo-frame");
   a.className = "UnderlineNav-item no-wrap js-responsive-underlinenav-item";
+
   a.innerHTML = `
     <svg aria-hidden="true" height="16" viewBox="0 0 16 16" width="16"
       class="octicon octicon-graph d-none d-sm-inline">
@@ -41,9 +44,18 @@ export function addTabLink() {
     <span>Git Graph</span>
   `;
 
-  // Prevent default nav behavior and render page manually
+  // Handle click: update selection, URL, and content
   a.addEventListener('click', (e) => {
     e.preventDefault();
+
+    // Remove 'selected' from all tabs
+    document.querySelectorAll('.UnderlineNav-item.selected')
+      .forEach(tab => tab.classList.remove('selected'));
+
+    // Add 'selected' to this tab
+    a.classList.add('selected');
+
+    // Push URL + trigger render
     const newUrl = a.href;
     if (location.href !== newUrl) {
       history.pushState(null, '', newUrl);
@@ -52,7 +64,12 @@ export function addTabLink() {
   });
 
   li.appendChild(a);
-  navUl.insertBefore(li, firstTab.nextSibling);
+  
+  
+  // Insert after the first tab (typically "Code")
+  const firstTabLi = navUl.querySelector('li');
+  navUl.insertBefore(li, firstTabLi?.nextSibling);
+
 
   console.log('✅ Git Graph tab injected!');
 }

@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "watch": "nodemon --watch src --ext js,ts,vue,jsx,tsx --exec \"npm run build\""
   },
   "devDependencies": {
+    "nodemon": "^3.1.10",
     "vite": "^6.3.5"
   }
 }
