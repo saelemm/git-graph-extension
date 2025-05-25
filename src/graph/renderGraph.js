@@ -1,5 +1,6 @@
 import { fetchCommits } from './fetchCommits.js';
 import { createGitgraph } from "@gitgraph/js";
+import { commitTab } from "./commitTab.js";
 
 export async function renderGraph(container, owner, repo) {
   const commits = await fetchCommits(owner, repo);
@@ -7,6 +8,8 @@ export async function renderGraph(container, owner, repo) {
   if (!container) return;
 
   container.innerHTML = '';
+
+  commitTab(container, commits);
 
   const options = {
     "orientation" : "vertical-reverse"
