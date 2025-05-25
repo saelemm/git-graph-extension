@@ -8,8 +8,10 @@ export async function renderGraph(container, owner, repo) {
 
   container.innerHTML = '';
 
-  //const graphContainer = document.getElementById("gitGraph");
-  const gitgraph = createGitgraph(container);
+  const options = {
+    "orientation" : "vertical-reverse"
+  }
+  const gitgraph = createGitgraph(container, options);
 
   const main = gitgraph.branch("main");
 
