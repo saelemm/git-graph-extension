@@ -78,15 +78,17 @@ export function commitTab(container, commits) {
       leftDiv.appendChild(messageContainer);
   
       // Commit message (bold, truncated)
-      const messageSpan = document.createElement("span");
-      messageSpan.textContent = commit.commit.message;
-      messageSpan.style.fontWeight = "500";
-      messageSpan.style.whiteSpace = "nowrap";
-      messageSpan.style.overflow = "hidden";
-      messageSpan.style.textOverflow = "ellipsis";
-      messageSpan.style.color = "white";
+      const messageLink = document.createElement("a");
+      messageLink.textContent = commit.commit.message;
+      messageLink.href = commit.html_url;
+      messageLink.target = "_blank";
+      messageLink.style.fontWeight = "500";
+      messageLink.style.whiteSpace = "nowrap";
+      messageLink.style.overflow = "hidden";
+      messageLink.style.textOverflow = "ellipsis";
+      messageLink.style.color = "white";
   
-      messageContainer.appendChild(messageSpan);
+      messageContainer.appendChild(messageLink);
   
       // Author, timestamp, verified icon container
       const detailsDiv = document.createElement("div");
@@ -98,11 +100,20 @@ export function commitTab(container, commits) {
       messageContainer.appendChild(detailsDiv);
   
       // Author name
-      const authorSpan = document.createElement("span");
+      const authorSpan = document.createElement("a");
       authorSpan.textContent = commit.author.login;
+      authorSpan.href = commit.author.html_url;
+      authorSpan.target = "_blank";
       authorSpan.style.color = "#9ca3af"; // text-gray-400
       authorSpan.style.fontSize = "0.875rem"; // text-sm
       detailsDiv.appendChild(authorSpan);
+
+            // Author name
+        const dateSpan = document.createElement("span");
+        dateSpan.textContent = commit.commit.committer.date;
+        dateSpan.style.color = "#9ca3af"; // text-gray-400
+        dateSpan.style.fontSize = "0.875rem"; // text-sm
+        detailsDiv.appendChild(dateSpan);
   
       // Timestamp
       const timestampSpan = document.createElement("span");
@@ -129,16 +140,16 @@ export function commitTab(container, commits) {
   
       commitDiv.appendChild(rightDiv);
   
-      // Commit hash box
-      const hashDiv = document.createElement("div");
-      hashDiv.textContent = commit.commit.tree.sha;
-      hashDiv.style.backgroundColor = "#1f2937"; // bg-gray-800
-      hashDiv.style.padding = "0.25rem 0.75rem";
-      hashDiv.style.borderRadius = "0.375rem"; // rounded
-      hashDiv.style.fontSize = "0.875rem";
-      hashDiv.style.fontFamily = "monospace";
-      hashDiv.style.color = "#3b82f6"; // text-blue-400
-      rightDiv.appendChild(hashDiv);
+// Commit hash box
+const hashDiv = document.createElement("div");
+hashDiv.textContent = commit.commit.tree.sha.slice(0, 7); // Only first 7 characters
+hashDiv.style.backgroundColor = "#1f2937"; // bg-gray-800
+hashDiv.style.padding = "0.25rem 0.75rem";
+hashDiv.style.borderRadius = "0.375rem"; // rounded
+hashDiv.style.fontSize = "0.875rem";
+hashDiv.style.fontFamily = "monospace";
+hashDiv.style.color = "#3b82f6"; // text-blue-400
+rightDiv.appendChild(hashDiv);
   
       // Copy button
       const copyBtn = document.createElement("button");
@@ -161,38 +172,10 @@ export function commitTab(container, commits) {
       };
   
       copyBtn.onclick = () => {
-        navigator.clipboard.writeText(commit.hash).then(() => {
-          alert("Commit hash copied!");
-        });
+        navigator.clipboard.writeText(commit.commit.tree.sha)
       };
   
       rightDiv.appendChild(copyBtn);
-  
-      // Code button (dummy, no action)
-      const codeBtn = document.createElement("button");
-      codeBtn.textContent = "Code";
-      codeBtn.style.background = "transparent";
-      codeBtn.style.border = "none";
-      codeBtn.style.color = "#9ca3af";
-      codeBtn.style.cursor = "pointer";
-      codeBtn.style.fontSize = "0.875rem";
-      codeBtn.style.padding = "0.25rem";
-      codeBtn.title = "View code";
-  
-      codeBtn.onmouseenter = () => {
-        codeBtn.style.color = "white";
-        codeBtn.style.backgroundColor = "#374151";
-      };
-      codeBtn.onmouseleave = () => {
-        codeBtn.style.color = "#9ca3af";
-        codeBtn.style.backgroundColor = "transparent";
-      };
-  
-      codeBtn.onclick = () => {
-        alert("Code button clicked (implement your logic)");
-      };
-  
-      rightDiv.appendChild(codeBtn);
     });
   }
   
