@@ -26,40 +26,84 @@ function buildHierarchy(nodeMap) {
     return { sha: "ROOT", children: rootNodes };
 }
 
-// Step 2: Assign columns to branches (forks move right)
+// Step 2: Assign columns to branches with proper column recycling
 function assignBranchColumns(root, nodeMap) {
     const branchAssignments = new Map();
-    let nextColumn = 1;
+    const usedColumns = new Set();
+    const freedColumns = new Set(); // for reuse
+    let maxColumn = 0;
 
-    function dfs(node, parentBranch = 0) {
-        if (branchAssignments.has(node.sha)) return;
-
-        let branchIndex = parentBranch;
-
-        if (node.parents?.length === 1) {
-            const parentSha = node.parents[0];
-            const parentNode = nodeMap.get(parentSha);
-            const parentBranchIndex = branchAssignments.get(parentSha);
-
-            if (parentNode && parentNode.children.length > 1) {
-                branchIndex = nextColumn++;
-            } else {
-                branchIndex = parentBranchIndex ?? 0;
-            }
-        } else if (node.parents?.length > 1) {
-            const parentBranches = node.parents.map(p => branchAssignments.get(p) ?? 0);
-            branchIndex = Math.min(...parentBranches);
+    function getFirstFreeColumn() {
+        if (freedColumns.size > 0) {
+            const sorted = [...freedColumns].sort((a, b) => a - b);
+            const col = sorted[0];
+            freedColumns.delete(col);
+            usedColumns.add(col);
+            return col;
         }
 
-        branchAssignments.set(node.sha, branchIndex);
+        while (usedColumns.has(maxColumn)) {
+            maxColumn++;
+        }
+        usedColumns.add(maxColumn);
+        return maxColumn;
+    }
 
+    function assignColumns(node, parentColumn = 0) {
+        if (branchAssignments.has(node.sha)) return;
+
+        let assignedColumn = parentColumn;
+        let columnsToFree = [];
+
+        const parentSha = node.parents?.[0];
+        const parentNode = parentSha ? nodeMap.get(parentSha) : null;
+        const parentAssignedCol = parentSha ? branchAssignments.get(parentSha) ?? 0 : 0;
+
+        const isFork = (
+            parentNode &&
+            parentNode.children.length > 1 &&
+            parentNode.children[0].sha !== node.sha
+        );
+
+        if (node.parents?.length > 1) {
+            // Merge commit
+            const parentColumns = node.parents
+                .map(p => branchAssignments.get(p))
+                .filter(col => col !== undefined);
+
+            assignedColumn = parentColumns.length ? Math.min(...parentColumns) : getFirstFreeColumn();
+
+            // Track other merged-in columns for freeing
+            columnsToFree = parentColumns.filter(col => col !== assignedColumn);
+        } else if (node.parents?.length === 1 && isFork) {
+            assignedColumn = getFirstFreeColumn();
+        } else if (node.parents?.length === 1) {
+            assignedColumn = parentAssignedCol;
+        } else {
+            // Root commit
+            assignedColumn = getFirstFreeColumn();
+        }
+
+        branchAssignments.set(node.sha, assignedColumn);
+        usedColumns.add(assignedColumn);
+        maxColumn = Math.max(maxColumn, assignedColumn);
+
+        // Recurse on children
         for (const child of node.children) {
-            dfs(child, branchIndex);
+            assignColumns(child, assignedColumn);
+        }
+
+        // Free merged columns *after* children have been assigned
+        for (const col of columnsToFree) {
+            if (usedColumns.has(col)) {
+                usedColumns.delete(col);
+                freedColumns.add(col);
+            }
         }
     }
 
     for (const child of root.children) {
-        dfs(child, 0);
+        assignColumns(child, 0);
     }
 
     return branchAssignments;
@@ -72,7 +116,6 @@ function assignGridPositionsTopological(flatNodes, branchAssignments) {
     const tempMark = new Set();
     let currentRow = 0;
 
-    // Build graph edges
     const edges = new Map();
     for (const node of flatNodes) {
         edges.set(node.data.sha, node.data.parents || []);
@@ -87,19 +130,28 @@ function assignGridPositionsTopological(flatNodes, branchAssignments) {
             visit(parent);
         }
         tempMark.delete(sha);
+
         visited.add(sha);
 
+        // Just use the precomputed branch column
         const col = branchAssignments.get(sha) ?? 0;
         positions.set(sha, { col, row: currentRow++ });
     }
 
-    for (const node of flatNodes) {
+    // Ensure deterministic order of node visiting (stable topological sort)
+    const sorted = [...flatNodes].sort((a, b) => {
+        const aParents = a.data.parents?.length || 0;
+        const bParents = b.data.parents?.length || 0;
+        if (aParents !== bParents) return aParents - bParents;
+        return a.data.sha.localeCompare(b.data.sha); // fallback
+    });
+
+    for (const node of sorted) {
         visit(node.data.sha);
     }
 
     return positions;
 }
-
 
 
 // Step 4: Render
@@ -117,12 +169,14 @@ export function renderCommitTree(container, nodeMap) {
     });
 
     const flatNodes = hierarchy.descendants().filter(d => d.data.sha !== "ROOT");
+    
+    // Use the original branch assignment function instead of topological
     const branchAssignments = assignBranchColumns(treeData, shaNodeMap);
     const gridPositions = assignGridPositionsTopological(flatNodes, branchAssignments);
 
     const branchSpacing = 100;
-    const rowHeight = 80;
-    const margin = { top: 50, left: 60 };
+    const rowHeight = 60;
+    const margin = { top: 10, left: 30 };
 
     // Position nodes
     flatNodes.forEach(d => {
@@ -149,16 +203,18 @@ export function renderCommitTree(container, nodeMap) {
     const svg = d3.select(container)
         .append("svg")
         .attr("width", svgWidth)
-        .attr("height", svgHeight)
+        .attr("height", "100%")
         .style("background", "#111")
         .style("max-width", "100%")
         .style("overflow", "visible");
 
     const g = svg.append("g");
+    svg.style.display = "block"
 
     // Draw links
     g.selectAll("path")
         .data(updatedLinks)
+        .attr("height", "100%")
         .enter()
         .append("path")
         .attr("d", d => {
@@ -168,8 +224,8 @@ export function renderCommitTree(container, nodeMap) {
             if (x1 === x2) {
                 return `M ${x1},${y1} L ${x2},${y2}`;
             } else {
-                const curveOffset = 40;
-return `M ${x1},${y1}
+                const curveOffset = 60;
+                return `M ${x1},${y1}
         C ${x1 + curveOffset},${y1}
           ${x2 - curveOffset},${y2}
           ${x2},${y2}`;
@@ -196,7 +252,7 @@ return `M ${x1},${y1}
         .append("text")
         .attr("x", d => d.x + 10)
         .attr("y", d => d.y + 4)
-        .text(d => d.data.message || d.data.sha)
+        .text(d => d.data.message)
         .attr("fill", "#ccc")
         .style("font-size", "12px");
-} 
+}

@@ -10,13 +10,15 @@ export async function renderGraph(container, owner, repo) {
     container.innerHTML = '';
 
     // Adjust layout to ensure vertical rendering
-    // graphWrapper.id = "graphWrapper";
-    // graphWrapper.style.width = "auto"; 
-    // graphWrapper.style.height = "100%";
-    // graphWrapper.style.display = "flex";
-    // graphWrapper.style.flexDirection = "column"; // Ensure vertical rendering
     const graphWrapper = document.createElement("div");
+    graphWrapper.id = "graphWrapper"
+    graphWrapper.style.maxWidth = "300px"
+    graphWrapper.style.width = "100%"
+
     const tabWrapper = document.createElement("div");
+    tabWrapper.id = "tabWrapper"
+    tabWrapper.style.flex = "1"
+    tabWrapper.style.boxSizing = "border-box"
 
     container.appendChild(graphWrapper);
     container.appendChild(tabWrapper);
