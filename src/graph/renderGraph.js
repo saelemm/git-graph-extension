@@ -14,10 +14,12 @@ export async function renderGraph(container, owner, repo) {
   container.appendChild(graphWrapper);
   container.appendChild(tabWrapper);
 
-  
+
   
   const options = {
-    "orientation" : "vertical-reverse"
+    "orientation" : "vertical-reverse",
+    "mode" : "compact"
+    
   }
   const gitgraph = createGitgraph(graphWrapper, options);
   const main = gitgraph.branch("main");
