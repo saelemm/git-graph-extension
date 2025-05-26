@@ -122,24 +122,41 @@ commitX[commit.sha] = x;
       .text(commit.message)
       .attr("fill", "#fff")
       .attr("font-size", "12px");
+  });
 
-    //   svg.append("foreignObject")
-    //   .attr("x", x + 120) // small left margin (adjust as needed)
-    //   .attr("y", y - 20) // align vertically with node
-    //   .attr("width", 300)
-    //   .attr("height", 60)
-    //   .append("xhtml:div")
-    //   .style("background", "#1f2937")
-    //   .style("color", "white")
-    //   .style("border-radius", "0.5rem")
-    //   .style("padding", "0.5rem")
-    //   .style("font-size", "0.75rem")
-    //   .style("font-family", "sans-serif")
-    //   .style("box-shadow", "0 0 4px rgba(0,0,0,0.2)")
-    //   .html(`
-    //     <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${commit.message}</div>
-    //     <div style="color:#9ca3af; font-size: 0.7rem;">${commit.author.login} • ${new Date(commit.commit.committer.date).toLocaleDateString()}</div>
-    //     <div style="color:#3b82f6; font-family:monospace;">${commit.commit.tree.sha.slice(0, 7)}</div>
-    //   `);
+  sortedCommits.forEach((commit, i) => {
+    const y = height - i * rowHeight - rowHeight / 2;
+    
+    // const x = commitX[commit.sha];
+    const x = 600;
+
+    const message = commit.data.commit.message
+    const author = commit.data.author.login
+    const date = commit.data.commit.author.date
+    const sha = commit.data.sha.slice(0, 7)
+
+    console.log(`Message : ${message}`)
+    console.log(`Author : ${author}`)
+    console.log(`Date : ${date}`)
+    console.log(`Sha : ${sha}`)
+  
+    svg.append("foreignObject")
+      .attr("x", x + 20) // slightly right of circle/text
+      .attr("y", y - 25) // vertically aligned to node
+      .attr("width", "100%")
+      .attr("height", 40)
+      .append("xhtml:div")
+      .style("background", "#1f2937")
+      .style("color", "white")
+      .style("border-radius", "0.5rem")
+      .style("padding", "0.5rem")
+      .style("font-size", "0.75rem")
+      .style("font-family", "sans-serif")
+      .style("box-shadow", "0 0 4px rgba(0,0,0,0.2)")
+      .html(`
+        <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${message}</div>
+        <div style="color:#9ca3af; font-size: 0.7rem;">${author} • ${new Date(date).toLocaleDateString()}</div>
+        <div style="color:#3b82f6; font-family:monospace;">${sha}</div>
+      `);
   });
 }
