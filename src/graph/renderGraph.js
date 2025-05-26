@@ -19,6 +19,7 @@ export async function renderGraph(container, owner, repo) {
   const options = {
     "orientation" : "vertical-reverse",
     "mode" : "compact"
+    
   }
   const gitgraph = createGitgraph(graphWrapper, options);
   const main = gitgraph.branch("main");
