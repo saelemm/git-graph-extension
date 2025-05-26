@@ -1,258 +1,127 @@
 import * as d3 from "d3";
 
 // Step 1: Build commit tree
-function buildHierarchy(nodeMap) {
-    const nodes = new Map();
+export async function renderCommitTree(parentDiv, commits) {
+  // Normalize the commits
+//   const commits = githubCommits.map(c => ({
+//     sha: c.sha,
+//     message: c.commit.message,
+//     parents: c.parents.map(p => p.sha)
+//   }));
 
-    for (const [sha, node] of nodeMap.entries()) {
-        nodes.set(sha, {
-            sha,
-            message: node.message,
-            parents: node.parents,
-            children: []
-        });
-    }
+  // Build SHA -> node lookup
+  const shaToNode = new Map();
+  commits.forEach(commit => {
+    shaToNode.set(commit.sha, { ...commit, children: [] });
+  });
 
-    for (const node of nodes.values()) {
-        for (const parentSha of node.parents || []) {
-            const parentNode = nodes.get(parentSha);
-            if (parentNode) {
-                parentNode.children.push(node);
-            }
-        }
-    }
+  // Link children
+  commits.forEach(commit => {
+    commit.parents.forEach(parentSha => {
+      const parent = shaToNode.get(parentSha);
+      if (parent) {
+        parent.children.push(commit.sha);
+      }
+    });
+  });
 
-    const rootNodes = Array.from(nodes.values()).filter(n => (n.parents?.length ?? 0) === 0);
-    return { sha: "ROOT", children: rootNodes };
+  // Sort commits in logical bottom-to-top order
+  const sortedCommits = [];
+  const visited = new Set();
+  function visit(sha) {
+    if (visited.has(sha)) return;
+    visited.add(sha);
+    const commit = shaToNode.get(sha);
+    commit?.parents.forEach(parentSha => visit(parentSha));
+    sortedCommits.push(commit);
+  }
+  commits.forEach(c => visit(c.sha));
+
+  // Remove existing SVG if any
+  parentDiv.innerHTML = "";
+
+  // Setup SVG
+  const width = 400;
+  const rowHeight = 60;
+  const height = sortedCommits.length * rowHeight;
+
+  const svg = d3.select(parentDiv)
+  .append("svg")
+  .attr("width", width)
+  .attr("height", height)
+  .style("display", "block")           // removes inline behavior
+  .style("margin-left", "auto")        // push to the right
+  .style("margin-right", "20px");  
+
+  const branchX = {
+    main: width / 2,
+    fork: width / 2 + 30
+  };
+
+  const shaIndex = Object.fromEntries(sortedCommits.map((c, i) => [c.sha, i]));
+
+  // Determine x position for each commit
+  const commitX = {};
+  sortedCommits.forEach(commit => {
+    let x = branchX.main;
+
+if (commit.parents.length === 1) {
+  var parentSha = commit.parents[0];
+  var parent = shaToNode.get(parentSha);
+  if (parent && parent.children && parent.children.length > 1) {
+    // This is a fork (parent has more than one child)
+    x = branchX.fork;
+  } else if (commitX[parentSha] !== undefined) {
+    // Inherit the parent's branch position (main or fork)
+    x = commitX[parentSha];
+  }
 }
 
-// Step 2: Assign columns to branches with proper column recycling
-function assignBranchColumns(root, nodeMap) {
-    const branchAssignments = new Map();
-    const usedColumns = new Set();
-    const freedColumns = new Set(); // for reuse
-    let maxColumn = 0;
-
-    function getFirstFreeColumn() {
-        if (freedColumns.size > 0) {
-            const sorted = [...freedColumns].sort((a, b) => a - b);
-            const col = sorted[0];
-            freedColumns.delete(col);
-            usedColumns.add(col);
-            return col;
-        }
-
-        while (usedColumns.has(maxColumn)) {
-            maxColumn++;
-        }
-        usedColumns.add(maxColumn);
-        return maxColumn;
-    }
-
-    function assignColumns(node, parentColumn = 0) {
-        if (branchAssignments.has(node.sha)) return;
-
-        let assignedColumn = parentColumn;
-        let columnsToFree = [];
-
-        const parentSha = node.parents?.[0];
-        const parentNode = parentSha ? nodeMap.get(parentSha) : null;
-        const parentAssignedCol = parentSha ? branchAssignments.get(parentSha) ?? 0 : 0;
-
-        const isFork = (
-            parentNode &&
-            parentNode.children.length > 1 &&
-            parentNode.children[0].sha !== node.sha
-        );
-
-        if (node.parents?.length > 1) {
-            // Merge commit
-            const parentColumns = node.parents
-                .map(p => branchAssignments.get(p))
-                .filter(col => col !== undefined);
-
-            assignedColumn = parentColumns.length ? Math.min(...parentColumns) : getFirstFreeColumn();
-
-            // Track other merged-in columns for freeing
-            columnsToFree = parentColumns.filter(col => col !== assignedColumn);
-        } else if (node.parents?.length === 1 && isFork) {
-            assignedColumn = getFirstFreeColumn();
-        } else if (node.parents?.length === 1) {
-            assignedColumn = parentAssignedCol;
-        } else {
-            // Root commit
-            assignedColumn = getFirstFreeColumn();
-        }
-
-        branchAssignments.set(node.sha, assignedColumn);
-        usedColumns.add(assignedColumn);
-        maxColumn = Math.max(maxColumn, assignedColumn);
-
-        // Recurse on children
-        for (const child of node.children) {
-            assignColumns(child, assignedColumn);
-        }
-
-        // Free merged columns *after* children have been assigned
-        for (const col of columnsToFree) {
-            if (usedColumns.has(col)) {
-                usedColumns.delete(col);
-                freedColumns.add(col);
-            }
-        }
-    }
-
-    for (const child of root.children) {
-        assignColumns(child, 0);
-    }
-
-    return branchAssignments;
+if (commit.parents.length > 1) {
+  // This is a merge commit; always go back to main
+  x = branchX.main;
 }
 
-// Step 3: Assign fixed rows (one row per commit)
-function assignGridPositionsTopological(flatNodes, branchAssignments) {
-    const positions = new Map();
-    const visited = new Set();
-    const tempMark = new Set();
-    let currentRow = 0;
+commitX[commit.sha] = x;
 
-    const edges = new Map();
-    for (const node of flatNodes) {
-        edges.set(node.data.sha, node.data.parents || []);
-    }
+  });
 
-    function visit(sha) {
-        if (visited.has(sha)) return;
-        if (tempMark.has(sha)) throw new Error("Graph is not a DAG");
+  // Draw links
+  sortedCommits.forEach((commit, i) => {
+    const y = height - i * rowHeight - rowHeight / 2;
+    const cx = commitX[commit.sha];
 
-        tempMark.add(sha);
-        for (const parent of edges.get(sha) || []) {
-            visit(parent);
-        }
-        tempMark.delete(sha);
+    commit.parents.forEach(parentSha => {
+      const parentIndex = shaIndex[parentSha];
+      if (parentIndex === undefined) return;
 
-        visited.add(sha);
+      const py = height - parentIndex * rowHeight - rowHeight / 2;
+      const px = commitX[parentSha];
 
-        // Just use the precomputed branch column
-        const col = branchAssignments.get(sha) ?? 0;
-        positions.set(sha, { col, row: currentRow++ });
-    }
-
-    // Ensure deterministic order of node visiting (stable topological sort)
-    const sorted = [...flatNodes].sort((a, b) => {
-        const aParents = a.data.parents?.length || 0;
-        const bParents = b.data.parents?.length || 0;
-        if (aParents !== bParents) return aParents - bParents;
-        return a.data.sha.localeCompare(b.data.sha); // fallback
-    });
-
-    for (const node of sorted) {
-        visit(node.data.sha);
-    }
-
-    return positions;
-}
-
-
-// Step 4: Render
-export function renderCommitTree(container, nodeMap) {
-    container.innerHTML = "";
-
-    const treeData = buildHierarchy(nodeMap);
-    const hierarchy = d3.hierarchy(treeData, d => d.children);
-
-    const nodeMapLookup = new Map();
-    const shaNodeMap = new Map();
-    hierarchy.each(d => {
-        nodeMapLookup.set(d.data.sha, d);
-        shaNodeMap.set(d.data.sha, d.data);
-    });
-
-    const flatNodes = hierarchy.descendants().filter(d => d.data.sha !== "ROOT");
-    
-    // Use the original branch assignment function instead of topological
-    const branchAssignments = assignBranchColumns(treeData, shaNodeMap);
-    const gridPositions = assignGridPositionsTopological(flatNodes, branchAssignments);
-
-    const branchSpacing = 100;
-    const rowHeight = 60;
-    const margin = { top: 10, left: 30 };
-
-    // Position nodes
-    flatNodes.forEach(d => {
-        const pos = gridPositions.get(d.data.sha);
-        d.x = pos.col * branchSpacing + margin.left;
-        d.y = (flatNodes.length - pos.row - 1) * rowHeight + margin.top; // bottom-up
-    });
-
-    // Build links
-    const updatedLinks = [];
-    for (const node of flatNodes) {
-        for (const parentSha of node.data.parents || []) {
-            const parent = nodeMapLookup.get(parentSha);
-            if (parent) {
-                updatedLinks.push({ source: node, target: parent });
-            }
-        }
-    }
-
-    const numColumns = Math.max(...[...branchAssignments.values()]) + 1;
-    const svgWidth = numColumns * branchSpacing + margin.left * 2;
-    const svgHeight = flatNodes.length * rowHeight + margin.top * 2;
-
-    const svg = d3.select(container)
-        .append("svg")
-        .attr("width", svgWidth)
-        .attr("height", "100%")
-        .style("background", "#111")
-        .style("max-width", "100%")
-        .style("overflow", "visible");
-
-    const g = svg.append("g");
-    svg.style.display = "block"
-
-    // Draw links
-    g.selectAll("path")
-        .data(updatedLinks)
-        .attr("height", "100%")
-        .enter()
-        .append("path")
-        .attr("d", d => {
-            const x1 = d.source.x, y1 = d.source.y;
-            const x2 = d.target.x, y2 = d.target.y;
-
-            if (x1 === x2) {
-                return `M ${x1},${y1} L ${x2},${y2}`;
-            } else {
-                const curveOffset = 60;
-                return `M ${x1},${y1}
-        C ${x1 + curveOffset},${y1}
-          ${x2 - curveOffset},${y2}
-          ${x2},${y2}`;
-            }
-        })
+      svg.append("path")
+        .attr("d", `M${cx},${y} C${cx},${(y + py) / 2} ${px},${(y + py) / 2} ${px},${py}`)
         .attr("stroke", "#fff")
-        .attr("stroke-width", 2)
-        .attr("fill", "none");
+        .attr("fill", "none")
+        .attr("stroke-width", 2);
+    });
+  });
 
-    // Draw nodes
-    g.selectAll("circle")
-        .data(flatNodes)
-        .enter()
-        .append("circle")
-        .attr("cx", d => d.x)
-        .attr("cy", d => d.y)
-        .attr("r", 6)
-        .attr("fill", "#f90");
+  // Draw nodes and labels
+  sortedCommits.forEach((commit, i) => {
+    const y = height - i * rowHeight - rowHeight / 2;
+    const x = commitX[commit.sha];
 
-    // Draw messages
-    g.selectAll("text")
-        .data(flatNodes)
-        .enter()
-        .append("text")
-        .attr("x", d => d.x + 10)
-        .attr("y", d => d.y + 4)
-        .text(d => d.data.message)
-        .attr("fill", "#ccc")
-        .style("font-size", "12px");
+    svg.append("circle")
+      .attr("cx", x)
+      .attr("cy", y)
+      .attr("r", 6)
+      .attr("fill", "#f97316");
+
+    svg.append("text")
+      .attr("x", x + 12)
+      .attr("y", y + 4)
+      .text(commit.message)
+      .attr("fill", "#fff")
+      .attr("font-size", "12px");
+  });
 }

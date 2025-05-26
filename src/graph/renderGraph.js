@@ -24,6 +24,6 @@ export async function renderGraph(container, owner, repo) {
     container.appendChild(tabWrapper);
 
     const nodeMap = buildCommitTree(commits);
-    renderCommitTree(graphWrapper, nodeMap);
+    renderCommitTree(graphWrapper, [...nodeMap.values()]);
     commitTab(tabWrapper, commits);
 }
