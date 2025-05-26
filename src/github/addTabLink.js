@@ -14,6 +14,7 @@ export function addTabLink() {
   // Ensure we don't double-inject
   if (document.querySelector('#graph-tab')) {
     console.log('⛔ Graph tab already exists.');
+    
     return;
   }
 
@@ -65,11 +66,9 @@ export function addTabLink() {
 
   li.appendChild(a);
   
-  
   // Insert after the first tab (typically "Code")
   const firstTabLi = navUl.querySelector('li');
   navUl.insertBefore(li, firstTabLi?.nextSibling);
-
 
   console.log('✅ Git Graph tab injected!');
 }

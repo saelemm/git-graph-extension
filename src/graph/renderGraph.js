@@ -1,37 +1,27 @@
 import { fetchCommits } from './fetchCommits.js';
-import { createGitgraph } from "@gitgraph/js";
-import { commitTab } from "./commitTab.js";
+import { buildCommitTree } from "./buildCommitTree.js";
+import { renderCommitTree } from "./renderCommitTree.js";
+import { commitTab } from './commitTab.js';
 
 export async function renderGraph(container, owner, repo) {
-  const commits = await fetchCommits(owner, repo);
+    const commits = await fetchCommits(owner, repo);
+    if (!container) return;
 
-  if (!container) return;
-  container.innerHTML = '';
-  container.style.display = "flex";
-  const tabWrapper = document.createElement("div");
-  const graphWrapper = document.createElement("div");
+    container.innerHTML = '';
 
-  container.appendChild(graphWrapper);
-  container.appendChild(tabWrapper);
+    // Adjust layout to ensure vertical rendering
+    // graphWrapper.id = "graphWrapper";
+    // graphWrapper.style.width = "auto"; 
+    // graphWrapper.style.height = "100%";
+    // graphWrapper.style.display = "flex";
+    // graphWrapper.style.flexDirection = "column"; // Ensure vertical rendering
+    const graphWrapper = document.createElement("div");
+    const tabWrapper = document.createElement("div");
 
+    container.appendChild(graphWrapper);
+    container.appendChild(tabWrapper);
 
-  
-  const options = {
-    "orientation" : "vertical-reverse",
-    "mode" : "compact"
-    
-  }
-  const gitgraph = createGitgraph(graphWrapper, options);
-  const main = gitgraph.branch("main");
-
-  commits.forEach((commit) => {
-    const message = commit.commit.message.split("\n")[0];
-    main.commit({
-      subject: message,
-      author: commit.commit.author.name,
-    });
-  });
-
-  commitTab(tabWrapper, commits);
-
+    const nodeMap = buildCommitTree(commits);
+    renderCommitTree(graphWrapper, nodeMap);
+    commitTab(tabWrapper, commits);
 }
