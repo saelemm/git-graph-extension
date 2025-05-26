@@ -42,13 +42,11 @@ function assignBranchColumns(root, nodeMap) {
             const parentBranchIndex = branchAssignments.get(parentSha);
 
             if (parentNode && parentNode.children.length > 1) {
-                // Fork: multiple children = new column
                 branchIndex = nextColumn++;
             } else {
                 branchIndex = parentBranchIndex ?? 0;
             }
         } else if (node.parents?.length > 1) {
-            // Merge: use leftmost (lowest) branch
             const parentBranches = node.parents.map(p => branchAssignments.get(p) ?? 0);
             branchIndex = Math.min(...parentBranches);
         }
@@ -67,7 +65,44 @@ function assignBranchColumns(root, nodeMap) {
     return branchAssignments;
 }
 
-// Step 3: Render tree
+// Step 3: Assign fixed rows (one row per commit)
+function assignGridPositionsTopological(flatNodes, branchAssignments) {
+    const positions = new Map();
+    const visited = new Set();
+    const tempMark = new Set();
+    let currentRow = 0;
+
+    // Build graph edges
+    const edges = new Map();
+    for (const node of flatNodes) {
+        edges.set(node.data.sha, node.data.parents || []);
+    }
+
+    function visit(sha) {
+        if (visited.has(sha)) return;
+        if (tempMark.has(sha)) throw new Error("Graph is not a DAG");
+
+        tempMark.add(sha);
+        for (const parent of edges.get(sha) || []) {
+            visit(parent);
+        }
+        tempMark.delete(sha);
+        visited.add(sha);
+
+        const col = branchAssignments.get(sha) ?? 0;
+        positions.set(sha, { col, row: currentRow++ });
+    }
+
+    for (const node of flatNodes) {
+        visit(node.data.sha);
+    }
+
+    return positions;
+}
+
+
+
+// Step 4: Render
 export function renderCommitTree(container, nodeMap) {
     container.innerHTML = "";
 
@@ -81,24 +116,19 @@ export function renderCommitTree(container, nodeMap) {
         shaNodeMap.set(d.data.sha, d.data);
     });
 
-    const branchAssignments = assignBranchColumns(treeData, shaNodeMap);
-
-    const branchSpacing = 80;
-    const verticalSpacing = 60;
-
-    // Topological order — reverse for bottom-to-top
     const flatNodes = hierarchy.descendants().filter(d => d.data.sha !== "ROOT");
-    const yPositions = new Map();
-    let y = 0;
-    for (let i = flatNodes.length - 1; i >= 0; i--) {
-        yPositions.set(flatNodes[i].data.sha, y++);
-    }
+    const branchAssignments = assignBranchColumns(treeData, shaNodeMap);
+    const gridPositions = assignGridPositionsTopological(flatNodes, branchAssignments);
 
-    // Assign layout positions
+    const branchSpacing = 100;
+    const rowHeight = 80;
+    const margin = { top: 50, left: 60 };
+
+    // Position nodes
     flatNodes.forEach(d => {
-        const branch = branchAssignments.get(d.data.sha) ?? 0;
-        d.x = branch * branchSpacing;
-        d.y = yPositions.get(d.data.sha) * verticalSpacing;
+        const pos = gridPositions.get(d.data.sha);
+        d.x = pos.col * branchSpacing + margin.left;
+        d.y = (flatNodes.length - pos.row - 1) * rowHeight + margin.top; // bottom-up
     });
 
     // Build links
@@ -107,21 +137,24 @@ export function renderCommitTree(container, nodeMap) {
         for (const parentSha of node.data.parents || []) {
             const parent = nodeMapLookup.get(parentSha);
             if (parent) {
-                updatedLinks.push({ source: node, target: parent }); // flipped: child → parent (bottom to top)
+                updatedLinks.push({ source: node, target: parent });
             }
         }
     }
 
-    const width = 1000;
-    const height = flatNodes.length * verticalSpacing + 100;
+    const numColumns = Math.max(...[...branchAssignments.values()]) + 1;
+    const svgWidth = numColumns * branchSpacing + margin.left * 2;
+    const svgHeight = flatNodes.length * rowHeight + margin.top * 2;
 
     const svg = d3.select(container)
         .append("svg")
-        .attr("width", width)
-        .attr("height", height)
-        .style("background", "#111");
+        .attr("width", svgWidth)
+        .attr("height", svgHeight)
+        .style("background", "#111")
+        .style("max-width", "100%")
+        .style("overflow", "visible");
 
-    const g = svg.append("g").attr("transform", "translate(50,50)");
+    const g = svg.append("g");
 
     // Draw links
     g.selectAll("path")
@@ -135,18 +168,18 @@ export function renderCommitTree(container, nodeMap) {
             if (x1 === x2) {
                 return `M ${x1},${y1} L ${x2},${y2}`;
             } else {
-                const midX = (x1 + x2) / 2;
-                return `M ${x1},${y1}
-                        C ${midX},${y1}
-                          ${midX},${y2}
-                          ${x2},${y2}`;
+                const curveOffset = 40;
+return `M ${x1},${y1}
+        C ${x1 + curveOffset},${y1}
+          ${x2 - curveOffset},${y2}
+          ${x2},${y2}`;
             }
         })
         .attr("stroke", "#fff")
         .attr("stroke-width", 2)
         .attr("fill", "none");
 
-    // Draw commit nodes
+    // Draw nodes
     g.selectAll("circle")
         .data(flatNodes)
         .enter()
@@ -156,7 +189,7 @@ export function renderCommitTree(container, nodeMap) {
         .attr("r", 6)
         .attr("fill", "#f90");
 
-    // Draw commit messages
+    // Draw messages
     g.selectAll("text")
         .data(flatNodes)
         .enter()
@@ -166,4 +199,4 @@ export function renderCommitTree(container, nodeMap) {
         .text(d => d.data.message || d.data.sha)
         .attr("fill", "#ccc")
         .style("font-size", "12px");
-}
+} 
