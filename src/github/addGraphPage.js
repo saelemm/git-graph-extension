@@ -19,7 +19,7 @@ export function addGraphPage() {
   const graphPage = document.createElement('div');
   graphPage.innerHTML = `
     <h2 style="margin-bottom: 1rem;">Git Graph</h2>
-    <div id="git-graph-container"  style="height: 100vh; display:flex;"></div>
+    <div id="git-graph-container"  style="height: 100%; display:flex;"></div>
   `;
   main.appendChild(graphPage);
 

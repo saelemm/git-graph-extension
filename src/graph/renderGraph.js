@@ -12,8 +12,8 @@ export async function renderGraph(container, owner, repo) {
     // Adjust layout to ensure vertical rendering
     const graphWrapper = document.createElement("div");
     graphWrapper.id = "graphWrapper"
-    graphWrapper.style.maxWidth = "300px"
     graphWrapper.style.width = "100%"
+    graphWrapper.style.height = "100%"
 
     const tabWrapper = document.createElement("div");
     tabWrapper.id = "tabWrapper"
@@ -21,9 +21,9 @@ export async function renderGraph(container, owner, repo) {
     tabWrapper.style.boxSizing = "border-box"
 
     container.appendChild(graphWrapper);
-    container.appendChild(tabWrapper);
+    //container.appendChild(tabWrapper);
 
     const nodeMap = buildCommitTree(commits);
     renderCommitTree(graphWrapper, [...nodeMap.values()]);
-    commitTab(tabWrapper, commits);
+    //commitTab(tabWrapper, commits);
 }

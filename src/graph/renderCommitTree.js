@@ -47,11 +47,10 @@ export async function renderCommitTree(parentDiv, commits) {
 
   const svg = d3.select(parentDiv)
   .append("svg")
-  .attr("width", width)
+  .attr("width", "100%")
   .attr("height", height)
   .style("display", "block")           // removes inline behavior
-  .style("margin-left", "auto")        // push to the right
-  .style("margin-right", "20px");  
+  .style("margin-left", "-160px");        // push to the left
 
   const branchX = {
     main: width / 2,
@@ -123,5 +122,24 @@ commitX[commit.sha] = x;
       .text(commit.message)
       .attr("fill", "#fff")
       .attr("font-size", "12px");
+
+    //   svg.append("foreignObject")
+    //   .attr("x", x + 120) // small left margin (adjust as needed)
+    //   .attr("y", y - 20) // align vertically with node
+    //   .attr("width", 300)
+    //   .attr("height", 60)
+    //   .append("xhtml:div")
+    //   .style("background", "#1f2937")
+    //   .style("color", "white")
+    //   .style("border-radius", "0.5rem")
+    //   .style("padding", "0.5rem")
+    //   .style("font-size", "0.75rem")
+    //   .style("font-family", "sans-serif")
+    //   .style("box-shadow", "0 0 4px rgba(0,0,0,0.2)")
+    //   .html(`
+    //     <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${commit.message}</div>
+    //     <div style="color:#9ca3af; font-size: 0.7rem;">${commit.author.login} • ${new Date(commit.commit.committer.date).toLocaleDateString()}</div>
+    //     <div style="color:#3b82f6; font-family:monospace;">${commit.commit.tree.sha.slice(0, 7)}</div>
+    //   `);
   });
 }
