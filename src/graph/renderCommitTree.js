@@ -2,12 +2,6 @@ import * as d3 from "d3";
 
 // Step 1: Build commit tree
 export async function renderCommitTree(parentDiv, commits) {
-  // Normalize the commits
-//   const commits = githubCommits.map(c => ({
-//     sha: c.sha,
-//     message: c.commit.message,
-//     parents: c.parents.map(p => p.sha)
-//   }));
 
   // Build SHA -> node lookup
   const shaToNode = new Map();
@@ -49,12 +43,14 @@ export async function renderCommitTree(parentDiv, commits) {
   .append("svg")
   .attr("width", "100%")
   .attr("height", height)
-  .style("display", "block")           // removes inline behavior
-  .style("margin-left", "-160px");        // push to the left
+  .style("display", "block");        // removes inline behavior
+  // .style("margin-left", "-160px");        // push to the left
+
+  const marginLeft = 170;
 
   const branchX = {
-    main: width / 2,
-    fork: width / 2 + 30
+    main: width / 2 - marginLeft,
+    fork: width / 2 + 30 - marginLeft
   };
 
   const shaIndex = Object.fromEntries(sortedCommits.map((c, i) => [c.sha, i]));
@@ -131,32 +127,46 @@ commitX[commit.sha] = x;
     const x = 600;
 
     const message = commit.data.commit.message
+    const avatar = commit.data.author.avatar_url
+    const commitUrl = commit.data.html_url
     const author = commit.data.author.login
+    const authorLink = commit.data.commit.author.html_url
     const date = commit.data.commit.author.date
     const sha = commit.data.sha.slice(0, 7)
 
-    console.log(`Message : ${message}`)
-    console.log(`Author : ${author}`)
-    console.log(`Date : ${date}`)
-    console.log(`Sha : ${sha}`)
-  
-    svg.append("foreignObject")
-      .attr("x", x + 20) // slightly right of circle/text
-      .attr("y", y - 25) // vertically aligned to node
-      .attr("width", "100%")
-      .attr("height", 40)
-      .append("xhtml:div")
-      .style("background", "#1f2937")
-      .style("color", "white")
-      .style("border-radius", "0.5rem")
-      .style("padding", "0.5rem")
-      .style("font-size", "0.75rem")
-      .style("font-family", "sans-serif")
-      .style("box-shadow", "0 0 4px rgba(0,0,0,0.2)")
-      .html(`
-        <div style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${message}</div>
-        <div style="color:#9ca3af; font-size: 0.7rem;">${author} • ${new Date(date).toLocaleDateString()}</div>
-        <div style="color:#3b82f6; font-family:monospace;">${sha}</div>
-      `);
+
+      svg.append("foreignObject")
+  .attr("x", x + 10 - 200)
+  .attr("y", y - 30)
+  .attr("width", "100%")
+  .attr("height", 50)
+  .append("xhtml:div")
+  .style("display", "flex")
+  .style("justify-content", "space-between")
+  .style("align-items", "center")
+  // .style("background", "#1f2937")
+  .style("padding", "0.75rem 1rem")
+  .style("border-radius", "0.5rem")
+  .style("font-family", "sans-serif")
+  .style("color", "white")
+  .style("font-size", "0.75rem")
+  .html(`
+    <div id="commit" style="display:flex; align-items:center; gap:0.75rem; flex:1;">
+      <div id="avatar" style="width:24px; height:24px; border-radius:50%; overflow:hidden;">
+        <img src="${avatar}" width="24" height="24" style="object-fit:cover;" />
+      </div>
+      <div id="commitInfo" style="flex:1; min-width:0; ; width:100%">
+        <a href="${commitUrl}" target="_blank" style="font-weight:500; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${message}</a>
+        <div style="color:#9ca3af; font-size:0.7rem; margin-top:0.25rem;">
+          <a href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()}
+        </div>
+      </div>
+      <div id="sha" style="display:flex; align-items:center; gap:0.5rem; margin-left:1rem;">
+        <div style="background:#FFFFF; padding:0.25rem 0.5rem; border-radius:0.375rem; font-family:monospace; color:#3b82f6;">${sha.slice(0, 7)}</div>
+        <button style="background:transparent; border:none; color:#9ca3af; font-size:0.75rem; cursor:pointer;">Copy</button>
+      </div>
+    </div>
+  `);
+
   });
 }

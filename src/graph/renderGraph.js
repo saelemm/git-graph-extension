@@ -1,10 +1,19 @@
-import { fetchCommits } from './fetchCommits.js';
+import { fetchCommits } from '../client/fetchCommits.js';
+import { fetchBranches } from '../client/fetchBranches.js';
+import { fetchCommitsHead } from '../client/fetchCommitsHead.js';
+import { fetchForks } from '../client/fetchForks.js';
+import { fetchRepo } from '../client/fetchRepo.js';
 import { buildCommitTree } from "./buildCommitTree.js";
 import { renderCommitTree } from "./renderCommitTree.js";
 import { commitTab } from './commitTab.js';
 
 export async function renderGraph(container, owner, repo) {
     const commits = await fetchCommits(owner, repo);
+    const branches = await fetchBranches(owner, repo);
+    const repoInfo = await fetchRepo(owner, repo);
+    
+    //const commitsHead = await fetchCommitsHead(owner, repo);
+    //const forks = await fetchForks(owner, repo);
     if (!container) return;
 
     container.innerHTML = '';
