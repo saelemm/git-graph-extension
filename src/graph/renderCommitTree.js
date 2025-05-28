@@ -40,6 +40,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     .attr("width", "100%")
     .attr("height", height)
     .style("display", "block")
+    .style("margin-left", "10px")
     ;
 
   const marginLeft = 360;
@@ -104,6 +105,8 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     });
   });
 
+  const dates = new Set();
+
   // Draw nodes and labels
   sortedCommits.forEach((commit, i) => {
     const y = height - i * rowHeight - rowHeight / 2;
@@ -120,6 +123,20 @@ const matchingBranch = branches.find(b => b.commit.sha === commit.sha);
 const branchName = matchingBranch ? `[${matchingBranch.name}]` : "";
 const HEAD = matchingBranch ? `[HEAD]` : "";
 const message = HEAD? `${HEAD}  ${branchName}` : commit.sha.slice(0, 7);
+const date = new Date(commit.data.commit.author.date);
+const dateString = date.toLocaleDateString();
+const monthStr = date.getMonth() + 1
+const dayStr = date.getDate();
+
+if (!dates.has(dateString)) {
+  svg.append("text")
+      .attr("x", branchBaseX - 35)
+      .attr("y", y + 4)
+      .text(`${dayStr}/${monthStr}`)
+      .attr("fill", "#fff")
+      .attr("font-size", "10px");
+      dates.add(dateString)
+}
 
 svg.append("text")
       .attr("x", x + 12)
