@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 
 // Step 1: Build commit tree
-export async function renderCommitTree(parentDiv, commits) {
+export async function renderCommitTree(parentDiv, commits, branches = []) {
   // Build SHA -> node lookup
   const shaToNode = new Map();
   commits.forEach(commit => {
@@ -116,10 +116,15 @@ export async function renderCommitTree(parentDiv, commits) {
       .attr("r", 6)
       .attr("fill", "#f97316");
 
-    svg.append("text")
+const matchingBranch = branches.find(b => b.commit.sha === commit.sha);
+const branchName = matchingBranch ? `[${matchingBranch.name}]` : "";
+const HEAD = matchingBranch ? `[HEAD]` : "";
+const message = HEAD? `${HEAD}  ${branchName}` : commit.sha.slice(0, 7);
+
+svg.append("text")
       .attr("x", x + 12)
       .attr("y", y + 4)
-      .text(commit.sha.slice(0, 7))
+      .text(`${message}`)
       .attr("fill", "#fff")
       .attr("font-size", "12px");
   });
@@ -128,14 +133,12 @@ export async function renderCommitTree(parentDiv, commits) {
   sortedCommits.forEach((commit, i) => {
     const y = height - i * rowHeight - rowHeight / 2;
     const x = 600;
-
-    if (!commit.data || !commit.data.commit || !commit.data.author) return;
-
+    
     const message = commit.data.commit.message;
-    const avatar = commit.data.author.avatar_url;
+    const avatar = commit?.data?.author?.avatar_url ? commit.data.author.avatar_url : "";
     const commitUrl = commit.data.html_url;
-    const author = commit.data.author.login;
-    const authorLink = commit.data.author.html_url || "#";
+    const author = commit?.data?.author?.login ? commit.data.author.login : commit.data.commit.author.name;
+    const authorLink = commit?.data?.author?.html_url || "#";
     const date = commit.data.commit.author.date;
     const sha = commit.sha.slice(0, 7);
 
@@ -163,7 +166,7 @@ export async function renderCommitTree(parentDiv, commits) {
               ${message.slice(0, 100)}
             </a>
             <div style="color:#9ca3af; font-size:0.7rem; margin-top:0.25rem;">
-              <a href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()}
+              <a href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()} ${new Date(date).toLocaleTimeString()}
             </div>
           </div>
           <div id="sha" style="display:flex; align-items:center; gap:0.5rem; width:20%; min-width:100px">
