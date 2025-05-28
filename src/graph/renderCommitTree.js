@@ -1,7 +1,7 @@
 import * as d3 from "d3";
 
 // Step 1: Build commit tree
-export async function renderCommitTree(parentDiv, commits, branches = []) {
+export async function renderCommitTree(parentDiv, commits, branches = [], actions = [], artifacts = []) {
   // Build SHA -> node lookup
   const shaToNode = new Map();
   commits.forEach(commit => {
@@ -141,9 +141,22 @@ svg.append("text")
     const authorLink = commit?.data?.author?.html_url || "#";
     const date = commit.data.commit.author.date;
     const sha = commit.sha.slice(0, 7);
+    const action = actions?.workflow_runs.find(ac => ac?.head_sha === commit.sha);
+
+    const actionIcon = {
+      success: "✅",
+      failure: "❌",
+      cancelled: "🚫",
+      in_progress: "⏳",
+      queued: "📦",
+      completed: "📄",
+    };
+
+  const icon = action ? actionIcon[action.conclusion || action.status] || "📄" : "";
+
 
     svg.append("foreignObject")
-      .attr("x", x - 450)
+      .attr("x", x - 430)
       .attr("y", y - 30)
       .attr("width", "90%")
       .attr("height", 50)
@@ -169,11 +182,18 @@ svg.append("text")
               <a href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()} ${new Date(date).toLocaleTimeString()}
             </div>
           </div>
+          <div id="actions" style="display:flex; align-items:center; justify-content: center; gap:0.5rem; min-width:100px">
+            ${action ? `
+              <a href="${action.html_url}" target="_blank" title="Workflow" style="text-decoration:none;">
+                <span style="font-size:1rem;">${icon}</span>
+              </a>
+            ` : ""}
+          </div>
           <div id="sha" style="display:flex; align-items:center; gap:0.5rem; width:20%; min-width:100px">
             <div style="background:#FFFFF; padding:0.25rem 0.5rem; border-radius:0.375rem; font-family:monospace; color:#3b82f6;">
               ${sha}
             </div>
-            <button style="background:transparent; border:none; color:#9ca3af; font-size:0.75rem; cursor:pointer;">Copy</button>
+            <button style="background:transparent; border:none; color:#9ca3af; font-size:0.75rem; cursor:pointer;">📝</button>
           </div>
         </div>
       `);
