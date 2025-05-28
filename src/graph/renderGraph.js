@@ -10,7 +10,7 @@ import { commitTab } from './commitTab.js';
 export async function renderGraph(container, owner, repo) {
     const commits = await fetchCommits(owner, repo);
     const branches = await fetchBranches(owner, repo);
-    const repoInfo = await fetchRepo(owner, repo);
+    //const repoInfo = await fetchRepo(owner, repo);
     
     //const commitsHead = await fetchCommitsHead(owner, repo);
     //const forks = await fetchForks(owner, repo);
@@ -33,6 +33,7 @@ export async function renderGraph(container, owner, repo) {
     //container.appendChild(tabWrapper);
 
     const nodeMap = buildCommitTree(commits);
-    renderCommitTree(graphWrapper, [...nodeMap.values()]);
+    renderCommitTree(graphWrapper, nodeMap);
+    // renderCommitTree(graphWrapper, [...nodeMap.values()]);
     //commitTab(tabWrapper, commits);
 }

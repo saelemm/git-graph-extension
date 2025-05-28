@@ -27,7 +27,9 @@ export async function renderCommitTree(parentDiv, commits) {
     visited.add(sha);
     const commit = shaToNode.get(sha);
     commit?.parents.forEach(parentSha => visit(parentSha));
-    sortedCommits.push(commit);
+    if (commit != null) {
+      sortedCommits.push(commit);
+    }
   }
   commits.forEach(c => visit(c.sha));
 
@@ -53,7 +55,9 @@ export async function renderCommitTree(parentDiv, commits) {
     fork: width / 2 + 30 - marginLeft
   };
 
-  const shaIndex = Object.fromEntries(sortedCommits.map((c, i) => [c.sha, i]));
+  const shaIndex = Object.fromEntries(sortedCommits
+    .filter((c, i) => c.sha != null)
+    .map((c, i) => [c.sha, i]));
 
   // Determine x position for each commit
   const commitX = {};
@@ -115,7 +119,7 @@ commitX[commit.sha] = x;
     svg.append("text")
       .attr("x", x + 12)
       .attr("y", y + 4)
-      .text(commit.message)
+      .text(commit.sha.slice(0, 7))
       .attr("fill", "#fff")
       .attr("font-size", "12px");
   });
@@ -136,9 +140,9 @@ commitX[commit.sha] = x;
 
 
       svg.append("foreignObject")
-  .attr("x", x + 10 - 200)
+  .attr("x", x - 500)
   .attr("y", y - 30)
-  .attr("width", "100%")
+  .attr("width", "90%")
   .attr("height", 50)
   .append("xhtml:div")
   .style("display", "flex")
@@ -155,16 +159,16 @@ commitX[commit.sha] = x;
       <div id="avatar" style="width:24px; height:24px; border-radius:50%; overflow:hidden;">
         <img src="${avatar}" width="24" height="24" style="object-fit:cover;" />
       </div>
-      <div id="commitInfo" style="flex:1; min-width:0; ; width:100%">
-        <a href="${commitUrl}" target="_blank" style="font-weight:500; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${message}</a>
+      <div id="commitInfo" style="flex:1; min-width:0; ; width:80%">
+        <a href="${commitUrl}" target="_blank" style="font-weight:500; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${message.slice(0, 100)}</a>
         <div style="color:#9ca3af; font-size:0.7rem; margin-top:0.25rem;">
           <a href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()}
         </div>
-      </div>
-      <div id="sha" style="display:flex; align-items:center; gap:0.5rem; margin-left:1rem;">
-        <div style="background:#FFFFF; padding:0.25rem 0.5rem; border-radius:0.375rem; font-family:monospace; color:#3b82f6;">${sha.slice(0, 7)}</div>
-        <button style="background:transparent; border:none; color:#9ca3af; font-size:0.75rem; cursor:pointer;">Copy</button>
-      </div>
+        </div>
+        <div id="sha" style="display:flex; align-items:center; gap:0.5rem; width:20%; min-width:100px">
+          <div style="background:#FFFFF; padding:0.25rem 0.5rem; border-radius:0.375rem; font-family:monospace; color:#3b82f6;">${sha.slice(0, 7)}</div>
+          <button style="background:transparent; border:none; color:#9ca3af; font-size:0.75rem; cursor:pointer;">Copy</button>
+        </div>
     </div>
   `);
 
