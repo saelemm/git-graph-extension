@@ -3,10 +3,6 @@ import * as d3 from "d3";
 // Step 1: Build commit tree
 export async function renderCommitTree(parentDiv, commits, branches = [], actions = [], artifacts = []) {
   // Build SHA -> node lookup
-  const shaToNode = new Map();
-  commits.forEach(commit => {
-    shaToNode.set(commit.sha, { ...commit});
-  });
 
   // Sort commits
   const sortedCommits = [];
@@ -15,7 +11,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
   function visit(sha) {
     if (visited.has(sha)) return;
     visited.add(sha);
-    const commit = shaToNode.get(sha);
+    const commit = commits.get(sha);
     if (!commit) return;
     commit.parents.forEach(parentSha => visit(parentSha));
     sortedCommits.push(commit);
@@ -50,7 +46,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
 
     if (commit.parents.length === 1) {
       const parentSha = commit.parents[0];
-      const parent = shaToNode.get(parentSha);
+      const parent = commits.get(parentSha);
       if (parent && parent.children.length > 1) {
         if (!branchMap.has(parentSha)) {
           branchMap.set(parentSha, new Map());
@@ -83,9 +79,6 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     .padStart(3, '0');
   return `#${hex}`;
 }
-//test3
-
-// test4
 
   // Draw links
   sortedCommits.forEach((commit, i) => {
