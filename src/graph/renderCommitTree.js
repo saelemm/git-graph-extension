@@ -85,6 +85,8 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
 }
 //test3
 
+// test4
+
   // Draw links
   sortedCommits.forEach((commit, i) => {
     const y = height - i * rowHeight - rowHeight / 2;
