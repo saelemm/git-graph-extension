@@ -187,57 +187,66 @@ svg.append("text")
 
 
     svg.append("foreignObject")
-      .attr("x", maxX + 150)
-      .attr("y", y - 30)
-      .attr("width", "90%")
-      .attr("height", 50)
-      .append("xhtml:div")
-      .style("display", "flex")
-      .style("justify-content", "space-between")
-      .style("align-items", "center")
-      .style("padding", "0.75rem 1rem")
-      .style("border-radius", "0.5rem")
-      .style("font-family", "sans-serif")
-      .style("color", "white")
-      .style("font-size", "0.75rem")
-      .html(`
-        <div id="commit" style="display:flex; align-items:center; gap:0.75rem; flex:1;">
-          <div id="avatar" style="width:24px; height:24px; border-radius:50%; overflow:hidden;">
-            <img src="${avatar}" width="24" height="24" style="object-fit:cover;" />
-          </div>
-          <div id="commitInfo" style="flex:1; min-width:0; width:80%">
-            <a href="${commitUrl}" target="_blank" style="font-weight:500; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-              ${message.slice(0, 100)}
-            </a>
-            <div style="color:#9ca3af; font-size:0.7rem; margin-top:0.25rem;">
-              <a href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()} ${new Date(date).toLocaleTimeString()}
-            </div>
-          </div>
+  .attr("x", maxX + 150)
+  .attr("y", y - 20)
+  .attr("width", "90%")
+  .attr("height", 50)
+  .append("xhtml:div")
+  .style("display", "flex")
+  .style("align-item", "center")
+  .html(`
+    <style>
+      .commit-tab {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        font-family: sans-serif;
+        color: white;
+        font-size: 0.75rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: background 0.2s ease-in-out;
+      }
 
-          ${artefact ? `
-          <a href="${artefact.url}" target="_blank" id="artefacts" style="display:flex; flex-direction:column; align-items:center; justify-content: center;">
-              <div title="Workflow" style="text-decoration:none;">
-                <span style="font-size:1rem;">📖</span>
-              </div>
-              <div>
-              ${artefact.id}
-              </div>
-          </a>
-            ` : ""}
-          <div id="actions" style="display:flex; align-items:center; justify-content: center; gap:0.5rem; min-width:100px">
-            ${action ? `
-              <a href="${action.html_url}" target="_blank" title="Workflow" style="text-decoration:none;">
-                <span style="font-size:1rem;">${icon}</span>
-              </a>
-            ` : ""}
-          </div>
-          <div id="sha" style="display:flex; align-items:center; gap:0.5rem; width:20%; min-width:100px">
-            <div style="background:#FFFFF; padding:0.25rem 0.5rem; border-radius:0.375rem; font-family:monospace; color:#3b82f6;">
-              ${sha}
-            </div>
-            <button style="background:transparent; border:none; color:#9ca3af; font-size:0.75rem; cursor:pointer;">📝</button>
-          </div>
+      .commit-tab:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+    </style>
+
+    <div class="commit-tab">
+      <div id="avatar" style="margin-right:10px; width:24px; height:24px; border-radius:50%; overflow:hidden;">
+        <img src="${avatar}" width="24" height="24" style="object-fit:cover;" />
+      </div>
+      <div id="commitInfo" style="flex:1; min-width:0; width:80%">
+        <a href="${commitUrl}" target="_blank" style="font-weight:500; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          ${message.slice(0, 100)}
+        </a>
+        <div style="color:#9ca3af; font-size:0.7rem; margin-top:0.25rem;">
+          <a href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()} ${new Date(date).toLocaleTimeString()}
         </div>
-      `);
+      </div>
+
+      ${artefact ? `
+      <a href="${artefact.url}" target="_blank" id="artefacts" style="display:flex; flex-direction:column; align-items:center; justify-content: center;">
+        <div title="Workflow" style="text-decoration:none;">
+          <span style="font-size:1rem;">📖</span>
+        </div>
+        <div>${artefact.id}</div>
+      </a>` : ""}
+
+      <div id="actions" style="display:flex; align-items:center; justify-content: center; gap:0.5rem; min-width:100px">
+        ${action ? `
+        <a href="${action.html_url}" target="_blank" title="Workflow" style="text-decoration:none;">
+          <span style="font-size:1rem;">${icon}</span>
+        </a>` : ""}
+      </div>
+
+      <div id="sha" style="display:flex; align-items:center; gap:0.5rem; width:20%; min-width:100px">
+        <div style="background:#FFFFF; padding:0.25rem 0.5rem; border-radius:0.375rem; font-family:monospace; color:#3b82f6;">
+          ${sha}
+        </div>
+        <button style="background:transparent; border:none; color:#9ca3af; font-size:0.75rem; cursor:pointer;">📝</button>
+      </div>
+    </div>
+  `);
   });
 }
