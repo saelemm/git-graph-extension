@@ -50,6 +50,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
   const shaIndex = Object.fromEntries(sortedCommits.map((c, i) => [c.sha, i]));
   const commitX = {};
   const branchMap = new Map();
+  let maxX = branchBaseX;
 
   sortedCommits.forEach(commit => {
     let x = branchBaseX;
@@ -75,6 +76,10 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
       }
     } else if (commit.parents.length > 1) {
       x = branchBaseX;
+    }
+
+    if (x > maxX) {
+      maxX = x;
     }
 
     commitX[commit.sha] = x;
@@ -122,7 +127,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
 const matchingBranch = branches.find(b => b.commit.sha === commit.sha);
 const branchName = matchingBranch ? `[${matchingBranch.name}]` : "";
 const HEAD = matchingBranch ? `[HEAD]` : "";
-const message = HEAD? `${HEAD}  ${branchName}` : commit.sha.slice(0, 7);
+const message = HEAD? `${HEAD}  ${branchName}`.slice(0, 22) + "..." : commit.sha.slice(0, 7);
 const date = new Date(commit.data.commit.author.date);
 const dateString = date.toLocaleDateString();
 const monthStr = date.getMonth() + 1
@@ -173,7 +178,7 @@ svg.append("text")
 
 
     svg.append("foreignObject")
-      .attr("x", x - 430)
+      .attr("x", maxX + 150)
       .attr("y", y - 30)
       .attr("width", "90%")
       .attr("height", 50)
