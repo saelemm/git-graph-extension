@@ -85,6 +85,13 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     commitX[commit.sha] = x;
   });
 
+  function getRandomHexColor() {
+  const hex = Math.floor(Math.random() * 0x1000) // 0x000 to 0xfff
+    .toString(16)
+    .padStart(3, '0');
+  return `#${hex}`;
+}
+
   // Draw links
   sortedCommits.forEach((commit, i) => {
     const y = height - i * rowHeight - rowHeight / 2;
@@ -102,9 +109,10 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
         ? `M${cx},${y} C${cx},${(y + py) / 2} ${px},${(y + py) / 2} ${px},${py}`
         : `M${cx},${y} L${px},${py}`;
 
+        branchColor = isFork ? getRandomHexColor() : "#fff";
       svg.append("path")
         .attr("d", path)
-        .attr("stroke", "#fff")
+        .attr("stroke", branchColor)
         .attr("fill", "none")
         .attr("stroke-width", 2);
     });
