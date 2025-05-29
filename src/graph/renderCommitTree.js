@@ -124,14 +124,22 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
       .attr("r", 6)
       .attr("fill", "#f97316");
 
-const matchingBranch = branches.find(b => b.commit.sha === commit.sha);
-const branchName = matchingBranch ? `[${matchingBranch.name}]` : "";
-const HEAD = matchingBranch ? `[HEAD]` : "";
-const message = HEAD? `${HEAD}  ${branchName}`.slice(0, 22) + "..." : commit.sha.slice(0, 7);
-const date = new Date(commit.data.commit.author.date);
-const dateString = date.toLocaleDateString();
-const monthStr = date.getMonth() + 1
-const dayStr = date.getDate();
+      const matchingBranch = branches.find(b => b.commit.sha === commit.sha);
+      const date = new Date(commit.data.commit.author.date);
+      const dateString = date.toLocaleDateString();
+      const monthStr = date.getMonth() + 1
+      const dayStr = date.getDate();
+      let headString = ""
+      const branchName = matchingBranch ? `[${matchingBranch.name}]` : "";
+      const HEAD = matchingBranch ? `[HEAD]` : "";
+      if (HEAD) {
+        headString = `${HEAD}  ${branchName}`
+        if (headString.length > 22) {
+          headString = headString.slice(0, 22) + "..."
+        }
+      }
+      const message = HEAD? headString : commit.sha.slice(0, 7);
+
 
 if (!dates.has(dateString)) {
   svg.append("text")
@@ -163,7 +171,8 @@ svg.append("text")
     const authorLink = commit?.data?.author?.html_url || "#";
     const date = commit.data.commit.author.date;
     const sha = commit.sha.slice(0, 7);
-    const action = actions?.workflow_runs.find(ac => ac?.head_sha === commit.sha);
+    const action = actions?.workflow_runs?.find(ac => ac?.head_sha === commit.sha);
+    const artefact = artifacts?.artifacts?.find(ar => ar?.workflow_run?.head_sha == commit.sha) 
 
     const actionIcon = {
       success: "✅",
@@ -204,6 +213,17 @@ svg.append("text")
               <a href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()} ${new Date(date).toLocaleTimeString()}
             </div>
           </div>
+
+          ${artefact ? `
+          <a href="${artefact.url}" target="_blank" id="artefacts" style="display:flex; flex-direction:column; align-items:center; justify-content: center;">
+              <div title="Workflow" style="text-decoration:none;">
+                <span style="font-size:1rem;">📖</span>
+              </div>
+              <div>
+              ${artefact.id}
+              </div>
+          </a>
+            ` : ""}
           <div id="actions" style="display:flex; align-items:center; justify-content: center; gap:0.5rem; min-width:100px">
             ${action ? `
               <a href="${action.html_url}" target="_blank" title="Workflow" style="text-decoration:none;">
