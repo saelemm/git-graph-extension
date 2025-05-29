@@ -10,6 +10,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
   // Sort commits
   const sortedCommits = [];
   const visited = new Set();
+  const mainLine = [];
 
   function visit(sha) {
     if (visited.has(sha)) return;
@@ -17,10 +18,27 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     const commit = commits.get(sha);
     if (!commit) return;
     commit.parents.forEach(parentSha => visit(parentSha));
+    console.log(`VISIT ${commit.sha.slice(0, 7)}`)
     sortedCommits.push(commit);
   }
 
   commits.forEach(c => visit(c.sha));
+
+  function constructMainLine(co) {
+      console.log(`MAIN ${co.sha.slice(0, 5)}`);
+      if (!co.parents || co.parents.length == 0 || 
+        !commits.get(co.parents[0])) {
+          console.log(`NOT FOUND`)
+        return;
+      }
+      console.log(`MAIN PARENT ${commits.get(co.parents[0]).sha.slice(0, 5)}`);
+      mainLine.push(co)
+      return constructMainLine(commits.get(co.parents[0]))
+  }
+
+  // construct main line from HEAD main branch
+  constructMainLine(sortedCommits[sortedCommits.length - 1])
+
 
   parentDiv.innerHTML = "";
 
@@ -136,7 +154,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
       const branchName = matchingBranch ? `[${matchingBranch.name}]` : "";
       const HEAD = matchingBranch ? `[HEAD]` : "";
       if (HEAD) {
-        headString = `${HEAD}  ${branchName}`
+        headString = `${commit.sha.slice(0, 5)} ${HEAD}  ${branchName}`
         if (headString.length > 22) {
           headString = headString.slice(0, 22) + "..."
         }
