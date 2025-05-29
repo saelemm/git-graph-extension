@@ -73,6 +73,8 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     commitX[commit.sha] = x;
   });
 
+  // test 6
+
   function getRandomHexColor() {
   const hex = Math.floor(Math.random() * 0x1000) // 0x000 to 0xfff
     .toString(16)
