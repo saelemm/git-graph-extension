@@ -5,22 +5,13 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
   // Build SHA -> node lookup
   const shaToNode = new Map();
   commits.forEach(commit => {
-    shaToNode.set(commit.sha, { ...commit, children: [] });
-  });
-
-  // Link children
-  commits.forEach(commit => {
-    commit.parents.forEach(parentSha => {
-      const parent = shaToNode.get(parentSha);
-      if (parent) {
-        parent.children.push(commit.sha);
-      }
-    });
+    shaToNode.set(commit.sha, { ...commit});
   });
 
   // Sort commits
   const sortedCommits = [];
   const visited = new Set();
+
   function visit(sha) {
     if (visited.has(sha)) return;
     visited.add(sha);
@@ -29,6 +20,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     commit.parents.forEach(parentSha => visit(parentSha));
     sortedCommits.push(commit);
   }
+
   commits.forEach(c => visit(c.sha));
 
   parentDiv.innerHTML = "";
@@ -91,6 +83,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     .padStart(3, '0');
   return `#${hex}`;
 }
+//test3
 
   // Draw links
   sortedCommits.forEach((commit, i) => {
