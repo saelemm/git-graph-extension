@@ -10,7 +10,7 @@ export async function renderCommitTree(
 ) {
   // Sort commits
   const sortedCommits = [];
-  const visited = new Set();
+  let visited = new Set();
   const mainLine = [];
 
   function visit(sha) {
@@ -24,8 +24,17 @@ export async function renderCommitTree(
 
   commits.forEach((c) => visit(c.sha));
 
+  function endOfMainLign(co) {
+    return (
+      !co ||
+      !co.parents ||
+      co.parents.length == 0 ||
+      !commits.get(co.parents[0])
+    );
+  }
+
   function constructMainLine(co) {
-    if (!co.parents || co.parents.length == 0 || !commits.get(co.parents[0])) {
+    if (endOfMainLign(co)) {
       return;
     }
     mainLine.push(co.sha);
@@ -34,6 +43,83 @@ export async function renderCommitTree(
 
   // construct main line from HEAD main branch
   constructMainLine(sortedCommits[sortedCommits.length - 1]);
+
+  const loops = {};
+  visited = new Set();
+
+  /**
+   *
+   * @param {*} co
+   * @returns
+   */
+  function buildLoopsDependency(co) {
+    const shaa = co.sha.slice(0, 5);
+    // If end of graph return
+    if (endOfMainLign(co)) {
+      console.log(`End of lign ${shaa}`);
+      return;
+    }
+
+    console.log(`Building loops ${shaa}`);
+
+    // If no merge, no loop
+    if (!isMerge(co)) {
+      console.log(`Not merge ${shaa}`);
+      buildLoopsDependency(commits.get(co.parents[0]));
+    } else {
+      visited.add(co.sha);
+      const mergeSha = co.sha;
+      let posX = 1;
+
+      // Building fork path
+      console.log(`Building Fork path`);
+      let coForkParent = commits.get(co.parents[1]);
+      let forkSha = '';
+      let forkPath = [];
+      forkPath.push(coForkParent.sha);
+      while (!mainLine.includes(coForkParent.sha)) {
+        coForkParent = commits.get(coForkParent.parents[0]);
+        if (!mainLine.includes(coForkParent.sha))
+          forkPath.push(coForkParent?.sha);
+      }
+      forkSha = coForkParent.sha;
+
+      console.log(`Fork path`);
+      console.log(`${mergeSha}  \\`);
+      forkPath.forEach((p) => console.log(`       ${p}\n        |`));
+      console.log(`   /\n${forkSha}`);
+
+      // Building main path
+      let mainPath = [];
+      let coMainParent = commits.get(co.parents[0]);
+      mainPath.push(coMainParent.sha);
+      while (commits.get(co.parents[0].sha != forkSha)) {
+        coMainParent = commits.get(coForkParent.parents[0]);
+        if (commits.get(coMainParent.sha != forkSha))
+          mainPath.push(coMainParent?.sha);
+      }
+
+      console.log(`Main path`);
+      console.log(`${mergeSha}\n|`);
+      mainPath.forEach((p) => console.log(`${p}\n|`));
+      console.log(`${forkSha}`);
+
+      return;
+
+      // loops[co.sha] = {
+      //   mainPath,
+      //   forks,
+      //   depth: currentDepth + 1,
+      // };
+    }
+  }
+
+  // console.log(`Logging main line`);
+  // for (i = 0; i < mainLine.length; i++) {
+  //   console.log(mainLine[i]);
+  // }
+
+  buildLoopsDependency(sortedCommits[sortedCommits.length - 1]);
 
   parentDiv.innerHTML = '';
 
@@ -79,9 +165,12 @@ export async function renderCommitTree(
     let x = branchBaseX;
     let forkLevel = 0;
 
+    // Case where node is a merge
     if (!isMerge(commit)) {
       const parentSha = commit.parents[0];
       const parent = commits.get(parentSha);
+
+      // If parent is a fork
       if (parent && isFork(parent)) {
         if (!branchMap.has(parentSha)) {
           branchMap.set(parentSha, new Map());
@@ -99,7 +188,9 @@ export async function renderCommitTree(
       } else {
         x = commitX[parentSha] ?? branchBaseX;
       }
-    } else if (commit.parents.length > 1) {
+
+      // case Merge node
+    } else if (isMerge(commit)) {
       x = branchBaseX;
     }
 
@@ -109,9 +200,6 @@ export async function renderCommitTree(
 
     commitX[commit.sha] = x;
   });
-
-  // test 6
-  //test5
 
   // Draw links
   sortedCommits.forEach((commit, i) => {
