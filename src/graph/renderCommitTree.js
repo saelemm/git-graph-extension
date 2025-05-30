@@ -2,11 +2,6 @@ import * as d3 from "d3";
 
 // Step 1: Build commit tree
 export async function renderCommitTree(parentDiv, commits, branches = [], actions = [], artifacts = []) {
-  // Build SHA -> node lookup
-
-  // test main
-  
-
   // Sort commits
   const sortedCommits = [];
   const visited = new Set();
@@ -18,27 +13,22 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     const commit = commits.get(sha);
     if (!commit) return;
     commit.parents.forEach(parentSha => visit(parentSha));
-    console.log(`VISIT ${commit.sha.slice(0, 7)}`)
     sortedCommits.push(commit);
   }
 
   commits.forEach(c => visit(c.sha));
 
   function constructMainLine(co) {
-      console.log(`MAIN ${co.sha.slice(0, 5)}`);
       if (!co.parents || co.parents.length == 0 || 
         !commits.get(co.parents[0])) {
-          console.log(`NOT FOUND`)
         return;
       }
-      console.log(`MAIN PARENT ${commits.get(co.parents[0]).sha.slice(0, 5)}`);
-      mainLine.push(co)
+      mainLine.push(co.sha)
       return constructMainLine(commits.get(co.parents[0]))
   }
 
   // construct main line from HEAD main branch
   constructMainLine(sortedCommits[sortedCommits.length - 1])
-
 
   parentDiv.innerHTML = "";
 
@@ -61,14 +51,26 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
   const branchMap = new Map();
   let maxX = branchBaseX;
 
+  function isMerge(co) {
+    return co.parents.length > 1
+  }
+
+  function isFork(co) {
+    return co.children.length > 1
+  }
+
+  function isMain(sha) {
+    return mainLine.includes(sha)
+  }
+
   sortedCommits.forEach(commit => {
     let x = branchBaseX;
     let forkLevel = 0;
 
-    if (commit.parents.length === 1) {
+    if (!isMerge(commit)) {
       const parentSha = commit.parents[0];
       const parent = commits.get(parentSha);
-      if (parent && parent.children.length > 1) {
+      if (parent && isFork(parent)) {
         if (!branchMap.has(parentSha)) {
           branchMap.set(parentSha, new Map());
         }
@@ -79,7 +81,9 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
         } else {
           forkLevel = branchChildren.get(commit.sha);
         }
-        x = branchBaseX + (forkLevel + 1) * branchSpacing;
+
+        const fkl = isMain(commit.sha) ? forkLevel : forkLevel + 1
+        x = branchBaseX + fkl * branchSpacing;
       } else {
         x = commitX[parentSha] ?? branchBaseX;
       }
@@ -118,7 +122,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
       const py = height - parentIndex * rowHeight - rowHeight / 2;
 
       const isFork = Math.abs(cx - px) > 0;
-      const path = isFork
+      const path = isFork && !mainLine[commit.sha]
         ? `M${cx},${y} C${cx},${(y + py) / 2} ${px},${(y + py) / 2} ${px},${py}`
         : `M${cx},${y} L${px},${py}`;
 
