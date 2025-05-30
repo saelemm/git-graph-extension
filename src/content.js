@@ -11,7 +11,10 @@ function init() {
 }
 
 // Wait for DOM to be ready
-if (document.readyState === 'complete' || document.readyState === 'interactive') {
+if (
+  document.readyState === 'complete' ||
+  document.readyState === 'interactive'
+) {
   init();
 } else {
   window.addEventListener('DOMContentLoaded', init);

@@ -9,19 +9,18 @@ export async function fetchRepo(owner, repo) {
   }
 
   const octokit = new Octokit({
-    auth: token
+    auth: token,
   });
 
   try {
     const response = await octokit.rest.repos.repo({
       owner,
-      repo
+      repo,
     });
 
     console.log(`✅ Fetched ${response.data.length} repo`);
     console.log(response.data);
     return response.data;
-
   } catch (err) {
     console.error(`❌ GitHub API error:`, err);
     return [];

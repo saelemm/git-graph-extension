@@ -1,4 +1,3 @@
 export function isRepoPage() {
-    return /^https:\/\/github\.com\/[^\/]+\/[^\/]+(\/)?/.test(location.href);
+  return /^https:\/\/github\.com\/[^\/]+\/[^\/]+(\/)?/.test(location.href);
 }
-  

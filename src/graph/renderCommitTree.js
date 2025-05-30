@@ -1,7 +1,13 @@
-import * as d3 from "d3";
+import * as d3 from 'd3';
 
 // Step 1: Build commit tree
-export async function renderCommitTree(parentDiv, commits, branches = [], actions = [], artifacts = []) {
+export async function renderCommitTree(
+  parentDiv,
+  commits,
+  branches = [],
+  actions = [],
+  artifacts = []
+) {
   // Sort commits
   const sortedCommits = [];
   const visited = new Set();
@@ -12,36 +18,35 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     visited.add(sha);
     const commit = commits.get(sha);
     if (!commit) return;
-    commit.parents.forEach(parentSha => visit(parentSha));
+    commit.parents.forEach((parentSha) => visit(parentSha));
     sortedCommits.push(commit);
   }
 
-  commits.forEach(c => visit(c.sha));
+  commits.forEach((c) => visit(c.sha));
 
   function constructMainLine(co) {
-      if (!co.parents || co.parents.length == 0 || 
-        !commits.get(co.parents[0])) {
-        return;
-      }
-      mainLine.push(co.sha)
-      return constructMainLine(commits.get(co.parents[0]))
+    if (!co.parents || co.parents.length == 0 || !commits.get(co.parents[0])) {
+      return;
+    }
+    mainLine.push(co.sha);
+    return constructMainLine(commits.get(co.parents[0]));
   }
 
   // construct main line from HEAD main branch
-  constructMainLine(sortedCommits[sortedCommits.length - 1])
+  constructMainLine(sortedCommits[sortedCommits.length - 1]);
 
-  parentDiv.innerHTML = "";
+  parentDiv.innerHTML = '';
 
   const width = 800;
   const rowHeight = 60;
   const height = sortedCommits.length * rowHeight;
-  const svg = d3.select(parentDiv).append("svg")
-    .attr("width", "100%")
-    .attr("height", height)
-    .style("display", "block")
-    .style("margin-left", "10px")
-    ;
-
+  const svg = d3
+    .select(parentDiv)
+    .append('svg')
+    .attr('width', '100%')
+    .attr('height', height)
+    .style('display', 'block')
+    .style('margin-left', '10px');
   const marginLeft = 360;
   const branchBaseX = width / 2 - marginLeft;
   const branchSpacing = 30;
@@ -52,18 +57,25 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
   let maxX = branchBaseX;
 
   function isMerge(co) {
-    return co.parents.length > 1
+    return co.parents.length > 1;
   }
 
   function isFork(co) {
-    return co.children.length > 1
+    return co.children.length > 1;
   }
 
   function isMain(sha) {
-    return mainLine.includes(sha)
+    return mainLine.includes(sha);
   }
 
-  sortedCommits.forEach(commit => {
+  function getRandomHexColor() {
+    const hex = Math.floor(Math.random() * 0x1000) // 0x000 to 0xfff
+      .toString(16)
+      .padStart(3, '0');
+    return `#${hex}`;
+  }
+
+  sortedCommits.forEach((commit) => {
     let x = branchBaseX;
     let forkLevel = 0;
 
@@ -82,7 +94,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
           forkLevel = branchChildren.get(commit.sha);
         }
 
-        const fkl = isMain(commit.sha) ? forkLevel : forkLevel + 1
+        const fkl = isMain(commit.sha) ? forkLevel : forkLevel + 1;
         x = branchBaseX + fkl * branchSpacing;
       } else {
         x = commitX[parentSha] ?? branchBaseX;
@@ -99,15 +111,7 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
   });
 
   // test 6
-
-  function getRandomHexColor() {
-  const hex = Math.floor(Math.random() * 0x1000) // 0x000 to 0xfff
-    .toString(16)
-    .padStart(3, '0');
-  return `#${hex}`;
-}
-
-//test5
+  //test5
 
   // Draw links
   sortedCommits.forEach((commit, i) => {
@@ -115,23 +119,25 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     const cx = commitX[commit.sha];
     if (!Number.isFinite(cx) || !Number.isFinite(y)) return;
 
-    commit.parents.forEach(parentSha => {
+    commit.parents.forEach((parentSha) => {
       const parentIndex = shaIndex[parentSha];
       const px = commitX[parentSha];
       if (!Number.isFinite(parentIndex) || !Number.isFinite(px)) return;
       const py = height - parentIndex * rowHeight - rowHeight / 2;
 
       const isFork = Math.abs(cx - px) > 0;
-      const path = isFork && !mainLine[commit.sha]
-        ? `M${cx},${y} C${cx},${(y + py) / 2} ${px},${(y + py) / 2} ${px},${py}`
-        : `M${cx},${y} L${px},${py}`;
+      const path =
+        isFork && !mainLine[commit.sha]
+          ? `M${cx},${y} C${cx},${(y + py) / 2} ${px},${(y + py) / 2} ${px},${py}`
+          : `M${cx},${y} L${px},${py}`;
 
-        branchColor = isFork ? getRandomHexColor() : "#fff";
-      svg.append("path")
-        .attr("d", path)
-        .attr("stroke", branchColor)
-        .attr("fill", "none")
-        .attr("stroke-width", 2);
+      branchColor = isFork ? getRandomHexColor() : '#fff';
+      svg
+        .append('path')
+        .attr('d', path)
+        .attr('stroke', branchColor)
+        .attr('fill', 'none')
+        .attr('stroke-width', 2);
     });
   });
 
@@ -143,83 +149,94 @@ export async function renderCommitTree(parentDiv, commits, branches = [], action
     const x = commitX[commit.sha];
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
 
-    svg.append("circle")
-      .attr("cx", x)
-      .attr("cy", y)
-      .attr("r", 6)
-      .attr("fill", "#f97316");
+    svg
+      .append('circle')
+      .attr('cx', x)
+      .attr('cy', y)
+      .attr('r', 6)
+      .attr('fill', '#f97316');
 
-      const matchingBranch = branches.find(b => b.commit.sha === commit.sha);
-      const date = new Date(commit.data.commit.author.date);
-      const dateString = date.toLocaleDateString();
-      const monthStr = date.getMonth() + 1
-      const dayStr = date.getDate();
-      let headString = ""
-      const branchName = matchingBranch ? `[${matchingBranch.name}]` : "";
-      const HEAD = matchingBranch ? `[HEAD]` : "";
-      if (HEAD) {
-        headString = `${commit.sha.slice(0, 5)} ${HEAD}  ${branchName}`
-        if (headString.length > 22) {
-          headString = headString.slice(0, 22) + "..."
-        }
+    const matchingBranch = branches.find((b) => b.commit.sha === commit.sha);
+    const date = new Date(commit.data.commit.author.date);
+    const dateString = date.toLocaleDateString();
+    const monthStr = date.getMonth() + 1;
+    const dayStr = date.getDate();
+    let headString = '';
+    const branchName = matchingBranch ? `[${matchingBranch.name}]` : '';
+    const HEAD = matchingBranch ? `[HEAD]` : '';
+    if (HEAD) {
+      headString = `${commit.sha.slice(0, 5)} ${HEAD}  ${branchName}`;
+      if (headString.length > 22) {
+        headString = headString.slice(0, 22) + '...';
       }
-      const message = HEAD? headString : commit.sha.slice(0, 7);
+    }
+    const message = HEAD ? headString : commit.sha.slice(0, 7);
 
+    if (!dates.has(dateString)) {
+      svg
+        .append('text')
+        .attr('x', branchBaseX - 35)
+        .attr('y', y + 4)
+        .text(`${dayStr}/${monthStr}`)
+        .attr('fill', '#fff')
+        .attr('font-size', '10px');
+      dates.add(dateString);
+    }
 
-if (!dates.has(dateString)) {
-  svg.append("text")
-      .attr("x", branchBaseX - 35)
-      .attr("y", y + 4)
-      .text(`${dayStr}/${monthStr}`)
-      .attr("fill", "#fff")
-      .attr("font-size", "10px");
-      dates.add(dateString)
-}
-
-svg.append("text")
-      .attr("x", x + 12)
-      .attr("y", y + 4)
+    svg
+      .append('text')
+      .attr('x', x + 12)
+      .attr('y', y + 4)
       .text(`${message}`)
-      .attr("fill", "#fff")
-      .attr("font-size", "12px");
+      .attr('fill', '#fff')
+      .attr('font-size', '12px');
   });
 
   // Metadata cards
   sortedCommits.forEach((commit, i) => {
     const y = height - i * rowHeight - rowHeight / 2;
     const x = 600;
-    
+
     const message = commit.data.commit.message;
-    const avatar = commit?.data?.author?.avatar_url ? commit.data.author.avatar_url : "";
+    const avatar = commit?.data?.author?.avatar_url
+      ? commit.data.author.avatar_url
+      : '';
     const commitUrl = commit.data.html_url;
-    const author = commit?.data?.author?.login ? commit.data.author.login : commit.data.commit.author.name;
-    const authorLink = commit?.data?.author?.html_url || "#";
+    const author = commit?.data?.author?.login
+      ? commit.data.author.login
+      : commit.data.commit.author.name;
+    const authorLink = commit?.data?.author?.html_url || '#';
     const date = commit.data.commit.author.date;
     const sha = commit.sha.slice(0, 7);
-    const action = actions?.workflow_runs?.find(ac => ac?.head_sha === commit.sha);
-    const artefact = artifacts?.artifacts?.find(ar => ar?.workflow_run?.head_sha == commit.sha) 
+    const action = actions?.workflow_runs?.find(
+      (ac) => ac?.head_sha === commit.sha
+    );
+    const artefact = artifacts?.artifacts?.find(
+      (ar) => ar?.workflow_run?.head_sha == commit.sha
+    );
 
     const actionIcon = {
-      success: "✅",
-      failure: "❌",
-      cancelled: "🚫",
-      in_progress: "⏳",
-      queued: "📦",
-      completed: "📄",
+      success: '✅',
+      failure: '❌',
+      cancelled: '🚫',
+      in_progress: '⏳',
+      queued: '📦',
+      completed: '📄',
     };
 
-  const icon = action ? actionIcon[action.conclusion || action.status] || "📄" : "";
+    const icon = action
+      ? actionIcon[action.conclusion || action.status] || '📄'
+      : '';
 
-
-    svg.append("foreignObject")
-  .attr("x", maxX + 150)
-  .attr("y", y - 20)
-  .attr("width", "90%")
-  .attr("height", 50)
-  .append("xhtml:div")
-  .style("display", "flex")
-  .style("align-item", "center")
-  .html(`
+    svg
+      .append('foreignObject')
+      .attr('x', maxX + 150)
+      .attr('y', y - 20)
+      .attr('width', '90%')
+      .attr('height', 50)
+      .append('xhtml:div')
+      .style('display', 'flex')
+      .style('align-item', 'center').html(`
     <style>
       .commit-tab {
         display: flex;
@@ -250,19 +267,27 @@ svg.append("text")
         </div>
       </div>
 
-      ${artefact ? `
+      ${
+        artefact
+          ? `
       <a href="${artefact.url}" target="_blank" id="artefacts" style="display:flex; flex-direction:column; align-items:center; justify-content: center;">
         <div title="Workflow" style="text-decoration:none;">
           <span style="font-size:1rem;">📖</span>
         </div>
         <div>${artefact.id}</div>
-      </a>` : ""}
+      </a>`
+          : ''
+      }
 
       <div id="actions" style="display:flex; align-items:center; justify-content: center; gap:0.5rem; min-width:100px">
-        ${action ? `
+        ${
+          action
+            ? `
         <a href="${action.html_url}" target="_blank" title="Workflow" style="text-decoration:none;">
           <span style="font-size:1rem;">${icon}</span>
-        </a>` : ""}
+        </a>`
+            : ''
+        }
       </div>
 
       <div id="sha" style="display:flex; align-items:center; gap:0.5rem; width:20%; min-width:100px">

@@ -17,7 +17,7 @@ export function addGraphPage() {
 
   // Create container for the graph
   const graphPage = document.createElement('div');
-  graphPage.id = "git graph"
+  graphPage.id = 'git graph';
   graphPage.innerHTML = `
     <h2 style="display:flex; align-item: center; margin-bottom: 1rem;">Git Graph</h2>
     <div id="git-graph-container"  style="height: 100%; display:flex;"></div>

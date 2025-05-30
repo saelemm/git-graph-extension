@@ -9,7 +9,7 @@ export async function fetchCommitsHead(owner, repo) {
   }
 
   const octokit = new Octokit({
-    auth: token
+    auth: token,
   });
 
   try {
@@ -22,7 +22,6 @@ export async function fetchCommitsHead(owner, repo) {
     console.log(`✅ Fetched ${response.data.length} heads`);
     console.log(response.data);
     return response.data;
-
   } catch (err) {
     console.error(`❌ GitHub API error:`, err);
     return [];

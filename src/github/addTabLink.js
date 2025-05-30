@@ -14,28 +14,28 @@ export function addTabLink() {
   // Ensure we don't double-inject
   if (document.querySelector('#graph-tab')) {
     console.log('⛔ Graph tab already exists.');
-    
+
     return;
   }
 
   // Create the new <li> for our tab
-  const li = document.createElement("li");
-  li.id = "graph-tab";
-  li.setAttribute("data-view-component", "true");
-  li.className = "d-inline-flex";
+  const li = document.createElement('li');
+  li.id = 'graph-tab';
+  li.setAttribute('data-view-component', 'true');
+  li.className = 'd-inline-flex';
 
-  const a = document.createElement("a");
-  a.id = "graph-tab-link";
+  const a = document.createElement('a');
+  a.id = 'graph-tab-link';
 
   // Compute repo base from URL (e.g., /owner/repo)
   const repoBasePath = location.pathname.split('/').slice(0, 3).join('/');
   a.href = `${repoBasePath}/graphs/git-graph`;
 
-  a.setAttribute("data-tab-item", "i1graph-tab");
-  a.setAttribute("data-view-component", "true");
-  a.setAttribute("data-pjax", "#repo-content-pjax-container");
-  a.setAttribute("data-turbo-frame", "repo-content-turbo-frame");
-  a.className = "UnderlineNav-item no-wrap js-responsive-underlinenav-item";
+  a.setAttribute('data-tab-item', 'i1graph-tab');
+  a.setAttribute('data-view-component', 'true');
+  a.setAttribute('data-pjax', '#repo-content-pjax-container');
+  a.setAttribute('data-turbo-frame', 'repo-content-turbo-frame');
+  a.className = 'UnderlineNav-item no-wrap js-responsive-underlinenav-item';
 
   a.innerHTML = `
     <svg aria-hidden="true" height="16" viewBox="0 0 16 16" width="16"
@@ -50,8 +50,9 @@ export function addTabLink() {
     e.preventDefault();
 
     // Remove 'selected' from all tabs
-    document.querySelectorAll('.UnderlineNav-item.selected')
-      .forEach(tab => tab.classList.remove('selected'));
+    document
+      .querySelectorAll('.UnderlineNav-item.selected')
+      .forEach((tab) => tab.classList.remove('selected'));
 
     // Add 'selected' to this tab
     a.classList.add('selected');
@@ -65,7 +66,7 @@ export function addTabLink() {
   });
 
   li.appendChild(a);
-  
+
   // Insert after the first tab (typically "Code")
   const firstTabLi = navUl.querySelector('li');
   navUl.insertBefore(li, firstTabLi?.nextSibling);
