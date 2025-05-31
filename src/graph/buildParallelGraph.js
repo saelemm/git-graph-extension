@@ -65,6 +65,7 @@ export function buildLoopsDependency(
 
     let forkLevel = 1;
     let beginLoop = sortedCommits.findIndex((c) => c.sha === mergeSha) - 1;
+    const color = util.getRandomHexColor();
 
     for (let i = beginLoop; i >= 0; i--) {
       const commit = sortedCommits[i];
@@ -81,7 +82,7 @@ export function buildLoopsDependency(
           isPartOfLoop,
           level: ++forkLevel,
           fCommit: commit,
-          color: util.getRandomHexColor(),
+          color: color,
         });
         continue;
       }
@@ -99,7 +100,7 @@ export function buildLoopsDependency(
         isFork,
         isPartOfLoop,
         fCommit: commits.get(sha),
-        color: util.getRandomHexColor(),
+        color: color,
         level: forkLevel,
       });
     }
