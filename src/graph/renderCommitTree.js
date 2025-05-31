@@ -29,6 +29,7 @@ export async function renderCommitTree(
 
   function constructMainLine(co) {
     if (util.endOfMainLign(co, commits)) {
+      mainLine.push(co.sha);
       return;
     }
     mainLine.push(co.sha);
@@ -37,13 +38,6 @@ export async function renderCommitTree(
 
   // construct main line from HEAD main branch
   constructMainLine(sortedCommits[sortedCommits.length - 1]);
-
-  const loops = buildLoopsDependency(
-    sortedCommits[sortedCommits.length - 1],
-    commits,
-    sortedCommits,
-    mainLine
-  );
 
   parentDiv.innerHTML = '';
 
@@ -66,93 +60,72 @@ export async function renderCommitTree(
   const branchMap = new Map();
   let maxX = branchBaseX;
 
-  function getRandomHexColor() {
-    const hex = Math.floor(Math.random() * 0x1000) // 0x000 to 0xfff
-      .toString(16)
-      .padStart(3, '0');
-    return `#${hex}`;
-  }
+  // Alternative build nodes and lign from loops
+  const loops = buildLoopsDependency(
+    sortedCommits[sortedCommits.length - 1],
+    commits,
+    sortedCommits,
+    mainLine
+  );
 
-  // Draw links
-  sortedCommits.forEach((commit, i) => {
+  console.log(loops); // 👈 All loops now available as an array
+
+  // Drawing graph
+  const entries = Array.from(commits.entries());
+  let commitIndex = 0;
+  let y = height - (commits.size - commitIndex) * rowHeight + rowHeight / 2;
+  mainLine.forEach((shaMain, i) => {
+    // Init drawing variables
+    const commit = commits.get(shaMain);
+    const sha = commit.sha;
+    y = height - (commits.size - commitIndex) * rowHeight + rowHeight / 2;
+    commitIndex++;
     let x = branchBaseX;
-    let forkLevel = 0;
 
-    // Case where node is a merge
-    if (!util.isMerge(commit)) {
-      const parentSha = commit.parents[0];
-      const parent = commits.get(parentSha);
+    drawCircle(commit, x, y, '#f97316');
 
-      // If parent is a fork
-      if (parent && util.isFork(parent)) {
-        if (!branchMap.has(parentSha)) {
-          branchMap.set(parentSha, new Map());
+    // Handling case of fork branches
+    if (util.isMerge(commit)) {
+      const loop = loops.get(commit.sha);
+      const annotatedPath = loop?.annotatedPath;
+
+      if (annotatedPath) {
+        for (let i = 1; i < annotatedPath.length - 1; i++) {
+          localNode = annotatedPath[i];
+          if (localNode.isPartOfLoop && localNode.isFork) {
+            commitIndex++;
+            y =
+              height -
+              (commits.size - commitIndex + 1) * rowHeight +
+              rowHeight / 2;
+
+            drawCircle(
+              localNode.fCommit,
+              x + branchBaseX * localNode.level,
+              y,
+              localNode.color
+            );
+          }
         }
-        const branchChildren = branchMap.get(parentSha);
-        if (!branchChildren.has(commit.sha)) {
-          forkLevel = branchChildren.size;
-          branchChildren.set(commit.sha, forkLevel);
-        } else {
-          forkLevel = branchChildren.get(commit.sha);
-        }
-
-        const fkl = util.isMain(commit.sha, mainLine)
-          ? forkLevel
-          : forkLevel + 1;
-        x = branchBaseX + fkl * branchSpacing;
-      } else {
-        x = commitX[parentSha] ?? branchBaseX;
       }
 
-      // case Merge node
-    } else if (util.isMerge(commit)) {
-      x = branchBaseX;
+      // console.log(`Getting loop from ${commit.sha}`);
+      // if (!loop) {
+      //   console.log(`DID NOT get loop from ${commit.sha}`);
+      // } else {
+      //   const annotatedPath = loop.annotatedPath;
+      //   console.log(`I have loop ${JSON.stringify(annotatedPath)}`);
+      // }
     }
-
-    if (x > maxX) {
-      maxX = x;
-    }
-
-    commitX[commit.sha] = x;
-
-    const y = height - i * rowHeight - rowHeight / 2;
-    const cx = commitX[commit.sha];
-    if (!Number.isFinite(cx) || !Number.isFinite(y)) return;
-
-    commit.parents.forEach((parentSha) => {
-      const parentIndex = shaIndex[parentSha];
-      const px = commitX[parentSha];
-      if (!Number.isFinite(parentIndex) || !Number.isFinite(px)) return;
-      const py = height - parentIndex * rowHeight - rowHeight / 2;
-
-      const isFork = Math.abs(cx - px) > 0;
-      const path =
-        isFork && !mainLine[commit.sha]
-          ? `M${cx},${y} C${cx},${(y + py) / 2} ${px},${(y + py) / 2} ${px},${py}`
-          : `M${cx},${y} L${px},${py}`;
-
-      branchColor = isFork ? getRandomHexColor() : '#fff';
-      svg
-        .append('path')
-        .attr('d', path)
-        .attr('stroke', branchColor)
-        .attr('fill', 'none')
-        .attr('stroke-width', 2);
-    });
   });
 
-  // Draw nodes and labels
-  sortedCommits.forEach((commit, i) => {
-    const y = height - i * rowHeight - rowHeight / 2;
-    const x = commitX[commit.sha];
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-
+  function drawCircle(commit, x, y, color) {
     svg
       .append('circle')
       .attr('cx', x)
       .attr('cy', y)
       .attr('r', 6)
-      .attr('fill', '#f97316');
+      .attr('fill', color);
 
     const matchingBranch = branches.find((b) => b.commit.sha === commit.sha);
     const date = new Date(commit.data.commit.author.date);
@@ -163,13 +136,12 @@ export async function renderCommitTree(
     const branchName = matchingBranch ? `[${matchingBranch.name}]` : '';
     const HEAD = matchingBranch ? `[HEAD]` : '';
     if (HEAD) {
-      headString = `${commit.sha.slice(0, 5)} ${HEAD}  ${branchName}`;
+      headString = `${commit.sha.slice(0, 2)} ${HEAD}  ${branchName}`;
       if (headString.length > 22) {
         headString = headString.slice(0, 22) + '...';
       }
     }
-    const message = HEAD ? headString : commit.sha.slice(0, 7);
-
+    const message = HEAD ? headString : commit.sha.slice(0, 2);
     if (!dates.has(dateString)) {
       svg
         .append('text')
@@ -188,7 +160,124 @@ export async function renderCommitTree(
       .text(`${message}`)
       .attr('fill', '#fff')
       .attr('font-size', '12px');
-  });
+  }
+
+  // Draw links
+  // sortedCommits.forEach((commit, i) => {
+  //   let x = branchBaseX;
+  //   let forkLevel = 0;
+
+  //   // Case where node is a merge
+  //   if (!util.isMerge(commit)) {
+  //     const parentSha = commit.parents[0];
+  //     const parent = commits.get(parentSha);
+
+  //     // If parent is a fork
+  //     if (parent && util.isFork(parent)) {
+  //       if (!branchMap.has(parentSha)) {
+  //         branchMap.set(parentSha, new Map());
+  //       }
+  //       const branchChildren = branchMap.get(parentSha);
+  //       if (!branchChildren.has(commit.sha)) {
+  //         forkLevel = branchChildren.size;
+  //         branchChildren.set(commit.sha, forkLevel);
+  //       } else {
+  //         forkLevel = branchChildren.get(commit.sha);
+  //       }
+
+  //       const fkl = util.isMain(commit.sha, mainLine)
+  //         ? forkLevel
+  //         : forkLevel + 1;
+  //       x = branchBaseX + fkl * branchSpacing;
+  //     } else {
+  //       x = commitX[parentSha] ?? branchBaseX;
+  //     }
+
+  //     // case Merge node
+  //   } else if (util.isMerge(commit)) {
+  //     x = branchBaseX;
+  //   }
+
+  //   if (x > maxX) {
+  //     maxX = x;
+  //   }
+
+  //   commitX[commit.sha] = x;
+
+  //   const y = height - i * rowHeight - rowHeight / 2;
+  //   const cx = commitX[commit.sha];
+  //   if (!Number.isFinite(cx) || !Number.isFinite(y)) return;
+
+  //   commit.parents.forEach((parentSha) => {
+  //     const parentIndex = shaIndex[parentSha];
+  //     const px = commitX[parentSha];
+  //     if (!Number.isFinite(parentIndex) || !Number.isFinite(px)) return;
+  //     const py = height - parentIndex * rowHeight - rowHeight / 2;
+
+  //     const isFork = Math.abs(cx - px) > 0;
+  //     const path =
+  //       isFork && !mainLine[commit.sha]
+  //         ? `M${cx},${y} C${cx},${(y + py) / 2} ${px},${(y + py) / 2} ${px},${py}`
+  //         : `M${cx},${y} L${px},${py}`;
+
+  //     branchColor = isFork ? util.getRandomHexColor() : '#fff';
+  //     svg
+  //       .append('path')
+  //       .attr('d', path)
+  //       .attr('stroke', branchColor)
+  //       .attr('fill', 'none')
+  //       .attr('stroke-width', 2);
+  //   });
+  // });
+
+  // // Draw nodes and labels
+  // sortedCommits.forEach((commit, i) => {
+  //   const y = height - i * rowHeight - rowHeight / 2;
+  //   const x = commitX[commit.sha];
+  //   if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+
+  //   svg
+  //     .append('circle')
+  //     .attr('cx', x)
+  //     .attr('cy', y)
+  //     .attr('r', 6)
+  //     .attr('fill', '#f97316');
+
+  //   const matchingBranch = branches.find((b) => b.commit.sha === commit.sha);
+  //   const date = new Date(commit.data.commit.author.date);
+  //   const dateString = date.toLocaleDateString();
+  //   const monthStr = date.getMonth() + 1;
+  //   const dayStr = date.getDate();
+  //   let headString = '';
+  //   const branchName = matchingBranch ? `[${matchingBranch.name}]` : '';
+  //   const HEAD = matchingBranch ? `[HEAD]` : '';
+  //   if (HEAD) {
+  //     headString = `${commit.sha.slice(0, 5)} ${HEAD}  ${branchName}`;
+  //     if (headString.length > 22) {
+  //       headString = headString.slice(0, 22) + '...';
+  //     }
+  //   }
+  //   const message = HEAD ? headString : commit.sha.slice(0, 7);
+
+  //   if (!dates.has(dateString)) {
+  //     svg
+  //       .append('text')
+  //       .attr('x', branchBaseX - 35)
+  //       .attr('y', y + 4)
+  //       .text(`${dayStr}/${monthStr}`)
+  //       .attr('fill', '#fff')
+  //       .attr('font-size', '10px');
+  //     dates.add(dateString);
+  //   }
+
+  //   svg
+  //     .append('text')
+  //     .attr('x', x + 12)
+  //     .attr('y', y + 4)
+  //     .text(`${message}`)
+  //     .attr('fill', '#fff')
+  //     .attr('font-size', '12px');
+  // });
 
   // Metadata cards
   sortedCommits.forEach((commit, i) => {
@@ -258,7 +347,7 @@ export async function renderCommitTree(
       </div>
       <div id="commitInfo" style="flex:1; min-width:0; width:80%">
         <a href="${commitUrl}" target="_blank" style="font-weight:500; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-          ${message.slice(0, 100)}
+          ${message.slice(0, 100)}  ${sha}
         </a>
         <div style="color:#9ca3af; font-size:0.7rem; margin-top:0.25rem;">
           <a href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()} ${new Date(date).toLocaleTimeString()}

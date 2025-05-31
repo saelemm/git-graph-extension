@@ -1,123 +1,109 @@
 import * as util from './utilFunctionGraph';
 
-const loops = {};
-
 /**
- *
- * @param {*} co
- * @returns
+ * Recursively builds loop data for each merge commit and stores them in a Map.
+ * @param {*} startCommit - The latest commit to start from.
+ * @param {Map<string, object>} commits - Map of all commits by SHA.
+ * @param {Array<object>} sortedCommits - List of all commits sorted topologically.
+ * @param {Array<string>} mainLine - Array of SHA strings representing the main branch.
+ * @returns {Map<string, object>} A map of loops, keyed by merge commit SHA.
  */
-export function buildLoopsDependency(co, commits, sortedCommits, mainLine) {
-  // If end of graph return
-  if (util.endOfMainLign(co, commits)) {
-    return loops;
-  }
+export function buildLoopsDependency(
+  startCommit,
+  commits,
+  sortedCommits,
+  mainLine
+) {
+  const loopMap = new Map();
 
-  // If no merge, no loop
-  if (!util.isMerge(co)) {
-    return buildLoopsDependency(
-      commits.get(co.parents[0]),
-      commits,
-      sortedCommits,
-      mainLine
-    );
-  } else {
-    const mergeSha = co?.sha;
-    // Building fork path
+  function recurse(co) {
+    if (!co || util.endOfMainLign(co, commits)) return;
+
+    if (!util.isMerge(co)) {
+      return recurse(commits.get(co.parents[0]));
+    }
+
+    const mergeSha = co.sha;
+    const forkPath = [];
+    const mainPath = [];
+    const annotatedPath = [];
+
+    // --- Fork path ---
     let coForkParent = commits.get(co.parents[1]);
     let forkSha = '';
-    let forkPath = [];
-    forkPath.push(coForkParent?.sha);
-    while (!mainLine.includes(coForkParent?.sha)) {
-      coForkParent = commits.get(coForkParent?.parents[0]);
-      if (!mainLine.includes(coForkParent?.sha))
-        forkPath.push(coForkParent?.sha);
+    if (coForkParent) {
+      forkPath.push(coForkParent.sha);
+      while (coForkParent && !mainLine.includes(coForkParent.sha)) {
+        coForkParent = commits.get(coForkParent.parents[0]);
+        if (coForkParent && !mainLine.includes(coForkParent.sha)) {
+          forkPath.push(coForkParent.sha);
+        }
+      }
+      if (coForkParent) forkSha = coForkParent.sha;
     }
-    forkSha = coForkParent?.sha;
 
-    // console.log(`Fork path`);
-    // console.log(`${mergeSha.slice(0, 7)}  \\`);
-    // forkPath.forEach((p) =>
-    //   console.log(`       ${p.slice(0, 7)}\n        |`)
-    // );
-    // console.log(`   /\n${forkSha.slice(0, 7)}`);
-
-    // Building main path
-    let mainPath = [];
+    // --- Main path ---
     let coMainParent = commits.get(co.parents[0]);
-    while (coMainParent.sha != forkSha) {
+    while (coMainParent && coMainParent.sha !== forkSha) {
       mainPath.push(coMainParent.sha);
       coMainParent = commits.get(coMainParent.parents[0]);
     }
 
-    // console.log(`Main path`);
-    // console.log(`${mergeSha.slice(0, 7)}\n|`);
-    // mainPath.forEach((p) => console.log(`${p.slice(0, 7)}\n|`));
-    // console.log(`${forkSha.slice(0, 7)}`);
+    const forkSet = new Set(forkPath);
+    const mainSet = new Set(mainPath);
 
-    // Building full path
-    const annotatedPath = [];
-    let forkLevel = 1;
+    // --- Annotated path ---
 
-    const forkSet = new Set(forkPath.map((c) => c));
-    const mainSet = new Set(mainPath.map((c) => c));
-
+    // Pushing the merge node first
     annotatedPath.push({
       sha: mergeSha,
       isFork: false,
       isPartOfLoop: true,
+      fCommit: commits.get(mergeSha),
       level: 0,
     });
 
-    // Calculate loop begining
-    let beginLoop = 0;
-    for (let i = sortedCommits.length - 1; i >= 0; i--) {
-      if (sortedCommits[i].sha == mergeSha) {
-        beginLoop = i - 1;
-        break;
-      }
-    }
+    let forkLevel = 1;
+    let beginLoop = sortedCommits.findIndex((c) => c.sha === mergeSha) - 1;
 
-    // Building actual full path
     for (let i = beginLoop; i >= 0; i--) {
       const commit = sortedCommits[i];
       const sha = commit.sha;
-      let fork = false;
-      let partOfLoop = false;
+      if (sha === forkSha) break;
 
-      if (sha == forkSha) break;
+      let isFork = false;
+      let isPartOfLoop = false;
+
       if (!forkSet.has(sha) && !mainSet.has(sha)) {
-        console.log(`Not contained sha ${sha}`);
-        forkLevel++;
         annotatedPath.push({
           sha,
-          isFork: fork,
-          isPartOfLoop: partOfLoop,
-          level: forkLevel,
+          isFork,
+          isPartOfLoop,
+          level: ++forkLevel,
+          fCommit: commit,
+          color: util.getRandomHexColor(),
         });
         continue;
       }
 
-      partOfLoop = true;
+      isPartOfLoop = true;
       if (forkSet.has(sha)) {
-        fork = true;
+        isFork = true;
       } else if (mainSet.has(sha)) {
-        if (util.isFork(commit)) {
-          forkLevel++;
-        }
-        if (util.isMerge(commit) && forkLevel > 1) {
-          forkLevel--;
-        }
+        if (util.isFork(commit)) forkLevel++;
+        if (util.isMerge(commit) && forkLevel > 1) forkLevel--;
       }
+
       annotatedPath.push({
         sha,
-        isFork: fork,
-        isPartOfLoop: partOfLoop,
+        isFork,
+        isPartOfLoop,
+        fCommit: commits.get(sha),
+        color: util.getRandomHexColor(),
         level: forkLevel,
       });
     }
 
-    // End with forkSha
     annotatedPath.push({
       sha: forkSha,
       isFork: false,
@@ -125,28 +111,32 @@ export function buildLoopsDependency(co, commits, sortedCommits, mainLine) {
       level: 0,
     });
 
-    // 🔍 Log with visual indentation
-    console.log('\n📌 Annotated Fork Path:');
+    // 🔍 Optional log
+    console.log(`\n📌 Loop from merge ${mergeSha}`);
     annotatedPath.forEach(({ sha, isFork, isPartOfLoop, level }, index) => {
       const indent = '\t'.repeat(level);
-      let label = isFork ? '🌿 Fork' : '🔷 Main';
-      if (!isPartOfLoop) label = '❌ Not Part';
+      const label = isFork
+        ? '🌿 Fork'
+        : isPartOfLoop
+          ? '🔷 Main'
+          : '❌ Not Part';
       console.log(
-        `${indent}${index}. ${label} | Level: ${level} | SHA: ${sha}`
+        `${indent}${index}. ${label} | Level: ${level} | SHA: ${sha.slice(0, 5)}`
       );
     });
 
-    loops[co.sha] = {
+    // 🗂 Store in Map
+    loopMap.set(mergeSha, {
+      mergeSha,
+      forkSha,
       mainPath,
       forkPath,
       annotatedPath,
-    };
+    });
 
-    return buildLoopsDependency(
-      commits.get(co.parents[0]),
-      commits,
-      sortedCommits,
-      mainLine
-    );
+    return recurse(commits.get(co.parents[0]));
   }
+
+  recurse(startCommit);
+  return loopMap;
 }

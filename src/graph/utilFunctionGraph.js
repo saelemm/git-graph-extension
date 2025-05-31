@@ -15,3 +15,10 @@ export function isFork(co) {
 export function isMain(sha, mainLine) {
   return mainLine.includes(sha);
 }
+
+export function getRandomHexColor() {
+  const hex = Math.floor(Math.random() * 0x1000) // 0x000 to 0xfff
+    .toString(16)
+    .padStart(3, '0');
+  return `#${hex}`;
+}
