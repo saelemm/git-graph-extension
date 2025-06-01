@@ -53,19 +53,20 @@ export function buildLoopsDependency(
     const mainSet = new Set(mainPath);
 
     // --- Annotated path ---
+    const color = util.getRandomHexColor();
 
     // Pushing the merge node first
     annotatedPath.push({
       sha: mergeSha,
       isFork: false,
       isPartOfLoop: true,
+      color: color,
       fCommit: commits.get(mergeSha),
       level: 0,
     });
 
     let forkLevel = 1;
     let beginLoop = sortedCommits.findIndex((c) => c.sha === mergeSha) - 1;
-    const color = util.getRandomHexColor();
 
     for (let i = beginLoop; i >= 0; i--) {
       const commit = sortedCommits[i];
@@ -108,6 +109,7 @@ export function buildLoopsDependency(
     annotatedPath.push({
       sha: forkSha,
       isFork: false,
+      color: color,
       isPartOfLoop: true,
       level: 0,
     });
@@ -132,6 +134,7 @@ export function buildLoopsDependency(
       forkSha,
       mainPath,
       forkPath,
+      color,
       annotatedPath,
     });
 

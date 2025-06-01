@@ -3,6 +3,7 @@ import * as util from './utilFunctionGraph';
 import { buildLoopsDependency } from './buildParallelGraph';
 import { drawCircle } from './drawCircle';
 import { drawForkLigns } from './drawLigns';
+import { drawMainLine } from './drawLigns';
 
 // Step 1: Build commit tree
 export async function renderCommitTree(
@@ -76,6 +77,10 @@ export async function renderCommitTree(
   const entries = Array.from(commits.entries());
   let commitIndex = 0;
   let y = height - (commits.size - commitIndex) * rowHeight + rowHeight / 2;
+
+  //Drawing main line
+  drawMainLine(svg, branchBaseX, y, branchBaseX, height - 25, '#ffffff');
+
   mainLine.forEach((shaMain, i) => {
     // Init drawing variables
     const commit = commits.get(shaMain);
@@ -85,7 +90,6 @@ export async function renderCommitTree(
     let x = branchBaseX;
 
     drawCircle(svg, branches, dates, branchBaseX, commit, x, y, '#f97316');
-
     // Handling case of fork branches
     if (util.isMerge(commit)) {
       const loop = loops.get(commit.sha);
@@ -117,10 +121,12 @@ export async function renderCommitTree(
         drawForkLigns(
           svg,
           annotatedPath,
-          '#f97316',
+          loop.color ? loop.color : '#fff',
           branchBaseX,
-          branchSpacing,
-          rowHeight
+          branchBaseX,
+          rowHeight,
+          y - 90,
+          x - 40
         );
       }
     }

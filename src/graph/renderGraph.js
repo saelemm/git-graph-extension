@@ -7,7 +7,6 @@ import { fetchForks } from '../client/fetchForks.js';
 import { fetchRepo } from '../client/fetchRepo.js';
 import { buildCommitTree } from './buildCommitTree.js';
 import { renderCommitTree } from './renderCommitTree.js';
-import { commitTab } from './commitTab.js';
 
 export async function renderGraph(container, owner, repo) {
   const commits = await fetchCommits(owner, repo);
