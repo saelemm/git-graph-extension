@@ -97,6 +97,16 @@ export async function renderCommitTree(
       const color = '#f97316';
 
       if (annotatedPath) {
+        drawForkLigns(
+          svg,
+          annotatedPath,
+          loop.color ? loop.color : '#fff',
+          branchBaseX,
+          branchBaseX,
+          rowHeight,
+          y - 30,
+          x - 40
+        );
         for (let i = 1; i < annotatedPath.length - 1; i++) {
           localNode = annotatedPath[i];
           if (localNode.isPartOfLoop && localNode.isFork) {
@@ -118,16 +128,6 @@ export async function renderCommitTree(
             );
           }
         }
-        drawForkLigns(
-          svg,
-          annotatedPath,
-          loop.color ? loop.color : '#fff',
-          branchBaseX,
-          branchBaseX,
-          rowHeight,
-          y - 90,
-          x - 40
-        );
       }
     }
   });
