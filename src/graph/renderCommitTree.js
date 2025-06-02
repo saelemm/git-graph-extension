@@ -68,6 +68,7 @@ export async function renderCommitTree(
   // Drawing graph impl
   let lastMainCommit;
   let forkPathDrawn = [];
+  const yCoordonate = new Map();
 
   Array.from(commits.values()).forEach((commit, i) => {
     let y = height - (commits.size - i) * rowHeight + rowHeight / 2;
@@ -80,28 +81,35 @@ export async function renderCommitTree(
       lastMainCommit = commit;
     } else {
       const loop = [...loops.entries()].find(([key, value]) => {
-        return value.forkPath.includes(commit.sha);
-      });
-      const [mergeSha, loopData] = loop;
-      if (loop && loopData && loopData.annotatedPath) {
-        pathNode = loopData.annotatedPath.find((el) => el.sha === commit.sha);
-        color = pathNode.color;
-        level = pathNode.level + 1;
-
-        if (!forkPathDrawn.find((el) => el === mergeSha)) {
-          drawForkLigns(
-            svg,
-            loopData.annotatedPath,
-            loopData.color ? loopData.color : '#fff',
-            branchBaseX,
-            branchBaseX,
-            rowHeight,
-            y - 90,
-            x - 40
-          );
+        if (value.annotatedPath) {
+          return value.annotatedPath.find((el) => {
+            return el.sha == commit.sha && el.isFork && el.isPartOfLoop;
+          });
         }
+      });
+      if (loop) {
+        const [mergeSha, loopData] = loop;
+        if (mergeSha && loopData) {
+          pathNode = loopData.annotatedPath.find((el) => el.sha === commit.sha);
+          color = pathNode.color;
+          level = pathNode.level + 1;
+
+          if (!forkPathDrawn.find((el) => el === mergeSha)) {
+            const yForkLign = yCoordonate.get(mergeSha);
+            drawForkLigns(
+              svg,
+              loopData.annotatedPath,
+              loopData.color ? loopData.color : '#fff',
+              branchBaseX,
+              branchBaseX,
+              rowHeight,
+              yForkLign - branchSpacing,
+              x - 40
+            );
+          }
+        }
+        forkPathDrawn.push(mergeSha);
       }
-      forkPathDrawn.push(mergeSha);
     }
 
     drawCircle(
@@ -114,6 +122,7 @@ export async function renderCommitTree(
       y,
       color
     );
+    yCoordonate.set(commit.sha, y);
   });
 
   // Metadata cards

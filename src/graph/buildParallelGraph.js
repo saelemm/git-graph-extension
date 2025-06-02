@@ -68,45 +68,55 @@ export function buildLoopsDependency(
 
     let forkLevel = 1;
     let beginLoop = sortedCommits.findIndex((c) => c.sha === mergeSha) - 1;
+    let previousIncrease = false;
 
     for (let i = beginLoop; i >= 0; i--) {
       const commit = sortedCommits[i];
       const sha = commit.sha;
+      console.log(
+        `Building path for ${sha} | is main ${util.isMain(sha, mainLine)}  | is merge ${util.isMerge(commit)} | is fork ${util.isFork(commit)}`
+      );
+
       if (sha === forkSha) break;
 
       let isFork = false;
       let isPartOfLoop = false;
 
-      if (!forkSet.has(sha) && !mainSet.has(sha)) {
-        annotatedPath.push({
-          sha,
-          isFork,
-          isPartOfLoop,
-          level: ++forkLevel,
-          fCommit: commit,
-          color: color,
-        });
-        continue;
+      if (previousIncrease) {
+        forkLevel++;
+        previousIncrease = false;
       }
 
-      isPartOfLoop = true;
+      // If main is a fork, reduce level by 1
+      if (forkLevel > 1 && util.isMain(sha, mainLine) && util.isFork(commit)) {
+        console.log(`Lowering with ${sha}`);
+        forkLevel--;
+        // If main is a merge, add level by 1 at the next iteration
+      } else if (util.isMain(sha, mainLine) && util.isMerge(commit)) {
+        console.log(`Increasing with ${sha}`);
+        previousIncrease = true;
+      }
+
+      // If node is not part of the path, foreign
       if (forkSet.has(sha)) {
         isFork = true;
-      } else if (mainSet.has(sha)) {
-        if (util.isFork(commit)) forkLevel++;
-        if (util.isMerge(commit) && forkLevel > 1) forkLevel--;
+      }
+
+      if (isFork || mainSet.has(sha)) {
+        isPartOfLoop = true;
       }
 
       annotatedPath.push({
         sha,
         isFork,
         isPartOfLoop,
-        fCommit: commits.get(sha),
-        color: color,
         level: forkLevel,
+        fCommit: commit,
+        color: color,
       });
     }
 
+    // Push last node the fork sha
     annotatedPath.push({
       sha: forkSha,
       isFork: false,
