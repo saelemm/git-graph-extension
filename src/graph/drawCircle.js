@@ -1,3 +1,5 @@
+import * as d3 from 'd3';
+
 export function drawCircle(
   svg,
   branches,
@@ -13,7 +15,23 @@ export function drawCircle(
     .attr('cx', x)
     .attr('cy', y)
     .attr('r', 6)
-    .attr('fill', color);
+    .attr('fill', color)
+    .on('mouseover', function () {
+      d3.select(this)
+        .transition()
+        .duration(200)
+        .attr('r', 8)
+        .style('cursor', 'pointer')
+        .attr('fill', 'white');
+    })
+    .on('mouseout', function () {
+      d3.select(this)
+        .transition()
+        .duration(200)
+        .attr('r', 6)
+        .style('cursor', 'default')
+        .attr('fill', color);
+    });
 
   const matchingBranch = branches.find((b) => b.commit.sha === commit.sha);
   const date = new Date(commit.data.commit.author.date);
@@ -24,7 +42,7 @@ export function drawCircle(
   const branchName = matchingBranch ? `[${matchingBranch.name}]` : '';
   if (matchingBranch) {
     headString = `${commit.sha.slice(0, 2)} ${branchName}`;
-    if (headString.length > 22) {
+    if (headString.length > 15) {
       headString = headString.slice(0, 20) + '...';
     }
   }
