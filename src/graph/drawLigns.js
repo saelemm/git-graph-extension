@@ -51,6 +51,20 @@ export function drawForkLigns(
     .attr('stroke-dashoffset', function () {
       return this.getTotalLength();
     })
+    .on('mouseover', function () {
+      d3.select(this)
+        .transition()
+        .duration(150)
+        .attr('stroke-width', 5)
+        .attr('stroke', 'orange'); // Optional: make it more "flashy"
+    })
+    .on('mouseout', function () {
+      d3.select(this)
+        .transition()
+        .duration(100)
+        .attr('stroke-width', 2)
+        .attr('stroke', branchColor);
+    })
     .transition()
     .duration(1200)
     .attr('stroke-dashoffset', 0);

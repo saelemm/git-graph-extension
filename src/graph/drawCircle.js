@@ -19,7 +19,7 @@ export function drawCircle(
     .on('mouseover', function () {
       d3.select(this)
         .transition()
-        .duration(200)
+        .duration(150)
         .attr('r', 8)
         .style('cursor', 'pointer')
         .attr('fill', 'white');
@@ -27,10 +27,13 @@ export function drawCircle(
     .on('mouseout', function () {
       d3.select(this)
         .transition()
-        .duration(200)
+        .duration(100)
         .attr('r', 6)
         .style('cursor', 'default')
         .attr('fill', color);
+    })
+    .on('click', function () {
+      window.open(commit?.data?.html_url, '_blank');
     });
 
   const matchingBranch = branches.find((b) => b.commit.sha === commit.sha);

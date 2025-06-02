@@ -170,6 +170,26 @@ export async function renderCommitTree(
       .attr('style', 'border-bottom: 1px solid rgba(255, 255, 255, 0.1);')
       .append('xhtml:div')
       .style('display', 'flex')
+      .on('click', function () {
+        window.open(commitUrl, '_blank');
+      })
+      .on('mouseover', function () {
+        d3.select(this)
+          .transition()
+          .duration(500)
+          .attr('r', 8)
+          .style('cursor', 'pointer')
+          .style('background', '#4e48480d')
+          .attr('fill', 'white');
+      })
+      .on('mouseout', function () {
+        d3.select(this)
+          .transition()
+          .duration(500)
+          .attr('r', 6)
+          .style('cursor', 'default')
+          .style('background', 'none');
+      })
       .style('align-item', 'center').html(`
     <style>
       .commit-tab{
@@ -183,11 +203,6 @@ export async function renderCommitTree(
         height:100%;
         width:100%;
       }
-
-      .commit-tab:hover {
-        background: rgba(255, 255, 255, 0.05);
-        cursor: pointer;
-      }
       #main_button {
         position: absolute;
         top: 0;
@@ -197,15 +212,14 @@ export async function renderCommitTree(
       }
     </style>
     <div class="commit-tab">
-    <a id="main_button" href="${commitUrl}" target="_blank" id="general_button" style="width:100%; height:100%; "> 
-      <div id="avatar" style="margin-right:10px; width:24px; height:24px; border-radius:50%; overflow:hidden;">
+      <div id="avatar" style="width:24px; height:24px; border-radius:50%; overflow:hidden;">
         <img src="${avatar}" width="24" height="24" style="object-fit:cover;" />
       </div>
       <div id="commitInfo" style="flex:1; min-width:0; width:80%">
         <a id="text_button" href="${commitUrl}" target="_blank" style="margin-left: 35px; font-weight:500; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
           ${message.slice(0, 100)}
         </a>
-        <div style="color:#9ca3af; font-size:0.7rem; margin-top:0.7rem;margin-left:35px;">
+        <div style="color:#9ca3af; font-size:0.7rem; margin-top:0.5rem;margin-left:35px;">
           <a id="author_button" href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()} ${new Date(date).toLocaleTimeString()}
           </a>
           </div>
@@ -240,7 +254,6 @@ export async function renderCommitTree(
         </div>
         <button style="background:transparent; border:none; color:#9ca3af; font-size:0.75rem; cursor:pointer;">📝</button>
       </div>
-      </a>
     </div>
   `);
   });
