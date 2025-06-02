@@ -12,15 +12,16 @@ export function buildLoopsDependency(
   startCommit,
   commits,
   sortedCommits,
-  mainLine
+  mainLine,
+  baseLevel = 0
 ) {
   const loopMap = new Map();
 
-  function recurse(co) {
+  function recurse(co, baseLevel = 0) {
     if (!co || util.endOfMainLign(co, commits)) return;
 
     if (!util.isMerge(co)) {
-      return recurse(commits.get(co.parents[0]));
+      return recurse(commits.get(co.parents[0]), baseLevel);
     }
 
     const mergeSha = co.sha;

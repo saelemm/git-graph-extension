@@ -14,21 +14,11 @@ export async function renderCommitTree(
   artifacts = []
 ) {
   // Sort commits
-  const sortedCommits = [];
+  // let sortedCommits = [];
   let visited = new Set();
   const mainLine = [];
   const dates = new Set();
-
-  function visit(sha) {
-    if (visited.has(sha)) return;
-    visited.add(sha);
-    const commit = commits.get(sha);
-    if (!commit) return;
-    commit.parents.forEach((parentSha) => visit(parentSha));
-    sortedCommits.push(commit);
-  }
-
-  commits.forEach((c) => visit(c.sha));
+  const sortedCommits = Array.from(commits.values()).reverse();
 
   function constructMainLine(co) {
     if (util.endOfMainLign(co, commits)) {
@@ -57,11 +47,8 @@ export async function renderCommitTree(
   const marginLeft = 360;
   const branchBaseX = width / 2 - marginLeft;
   const branchSpacing = 30;
-
-  const shaIndex = Object.fromEntries(sortedCommits.map((c, i) => [c.sha, i]));
-  const commitX = {};
-  const branchMap = new Map();
   let maxX = branchBaseX;
+  let commitIndex = 0;
 
   // Alternative build nodes and lign from loops
   const loops = buildLoopsDependency(
@@ -71,65 +58,60 @@ export async function renderCommitTree(
     mainLine
   );
 
-  console.log(loops); // 👈 All loops now available as an array
+  console.log(loops);
 
   // Drawing graph
-  const entries = Array.from(commits.entries());
-  let commitIndex = 0;
   let y = height - (commits.size - commitIndex) * rowHeight + rowHeight / 2;
 
   //Drawing main line
   drawMainLine(svg, branchBaseX, y, branchBaseX, height - 25, '#ffffff');
 
-  mainLine.forEach((shaMain, i) => {
-    // Init drawing variables
-    const commit = commits.get(shaMain);
-    const sha = commit.sha;
-    y = height - (commits.size - commitIndex) * rowHeight + rowHeight / 2;
-    commitIndex++;
-    let x = branchBaseX;
+  // Drawing graph impl
+  let lastMainCommit;
+  let forkPathDrawn = [];
+  Array.from(commits.values()).forEach((commit, i) => {
+    //const y = height - i * rowHeight - rowHeight / 2;
+    let y = height - (commits.size - i) * rowHeight + rowHeight / 2;
+    const x = branchBaseX;
+    let level = 1;
+    let color = '#f97316';
 
-    drawCircle(svg, branches, dates, branchBaseX, commit, x, y, '#f97316');
-    // Handling case of fork branches
-    if (util.isMerge(commit)) {
-      const loop = loops.get(commit.sha);
-      const annotatedPath = loop?.annotatedPath;
-      const color = '#f97316';
+    if (util.isMain(commit.sha, mainLine)) {
+      lastMainCommit = commit;
+    } else if (lastMainCommit) {
+      loop = loops.get(lastMainCommit.sha);
+      if (loop && loop.annotatedPath) {
+        pathNode = loop.annotatedPath.find((el) => el.sha === commit.sha);
+        color = pathNode.color;
+        level = pathNode.level + 1;
 
-      if (annotatedPath) {
-        drawForkLigns(
-          svg,
-          annotatedPath,
-          loop.color ? loop.color : '#fff',
-          branchBaseX,
-          branchBaseX,
-          rowHeight,
-          y - 30,
-          x - 40
-        );
-        for (let i = 1; i < annotatedPath.length - 1; i++) {
-          localNode = annotatedPath[i];
-          if (localNode.isPartOfLoop && localNode.isFork) {
-            commitIndex++;
-            y =
-              height -
-              (commits.size - commitIndex + 1) * rowHeight +
-              rowHeight / 2;
-            color = localNode.color;
-            drawCircle(
-              svg,
-              branches,
-              dates,
-              branchBaseX,
-              localNode.fCommit,
-              x + branchBaseX * localNode.level,
-              y,
-              localNode.color
-            );
-          }
+        if (!forkPathDrawn.find((el) => el === lastMainCommit.sha)) {
+          drawForkLigns(
+            svg,
+            loop.annotatedPath,
+            loop.color ? loop.color : '#fff',
+            branchBaseX,
+            branchBaseX,
+            rowHeight,
+            y - 90,
+            x - 40
+          );
         }
       }
+      forkPathDrawn.push(lastMainCommit.sha);
     }
+
+    drawCircle(
+      svg,
+      branches,
+      dates,
+      branchBaseX,
+      commit,
+      branchBaseX * level,
+      y,
+      color
+    );
+    commitIndex++;
   });
 
   // Metadata cards
