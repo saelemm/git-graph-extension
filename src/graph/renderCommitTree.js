@@ -167,37 +167,48 @@ export async function renderCommitTree(
       .attr('y', y - 20)
       .attr('width', '90%')
       .attr('height', 50)
+      .attr('style', 'border-bottom: 1px solid rgba(255, 255, 255, 0.1);')
       .append('xhtml:div')
       .style('display', 'flex')
       .style('align-item', 'center').html(`
     <style>
-      .commit-tab {
+      .commit-tab{
         display: flex;
         align-items: center;
         flex: 1;
         font-family: sans-serif;
         color: white;
         font-size: 0.75rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         transition: background 0.2s ease-in-out;
+        height:100%;
+        width:100%;
       }
 
       .commit-tab:hover {
         background: rgba(255, 255, 255, 0.05);
+        cursor: pointer;
+      }
+      #main_button {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
       }
     </style>
-
     <div class="commit-tab">
+    <a id="main_button" href="${commitUrl}" target="_blank" id="general_button" style="width:100%; height:100%; "> 
       <div id="avatar" style="margin-right:10px; width:24px; height:24px; border-radius:50%; overflow:hidden;">
         <img src="${avatar}" width="24" height="24" style="object-fit:cover;" />
       </div>
       <div id="commitInfo" style="flex:1; min-width:0; width:80%">
-        <a href="${commitUrl}" target="_blank" style="font-weight:500; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-          ${message.slice(0, 100)}  ${sha}
+        <a id="text_button" href="${commitUrl}" target="_blank" style="margin-left: 35px; font-weight:500; color:white; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+          ${message.slice(0, 100)}
         </a>
-        <div style="color:#9ca3af; font-size:0.7rem; margin-top:0.25rem;">
-          <a href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()} ${new Date(date).toLocaleTimeString()}
-        </div>
+        <div style="color:#9ca3af; font-size:0.7rem; margin-top:0.7rem;margin-left:35px;">
+          <a id="author_button" href="${authorLink}" target="_blank" style="color:#9ca3af;">${author}</a> • ${new Date(date).toLocaleDateString()} ${new Date(date).toLocaleTimeString()}
+          </a>
+          </div>
       </div>
 
       ${
@@ -229,6 +240,7 @@ export async function renderCommitTree(
         </div>
         <button style="background:transparent; border:none; color:#9ca3af; font-size:0.75rem; cursor:pointer;">📝</button>
       </div>
+      </a>
     </div>
   `);
   });
