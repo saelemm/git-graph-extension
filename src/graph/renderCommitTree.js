@@ -15,7 +15,6 @@ export async function renderCommitTree(
 ) {
   // Sort commits
   // let sortedCommits = [];
-  let visited = new Set();
   const mainLine = [];
   const dates = new Set();
   const sortedCommits = Array.from(commits.values()).reverse();
@@ -69,27 +68,31 @@ export async function renderCommitTree(
   // Drawing graph impl
   let lastMainCommit;
   let forkPathDrawn = [];
+
   Array.from(commits.values()).forEach((commit, i) => {
-    //const y = height - i * rowHeight - rowHeight / 2;
     let y = height - (commits.size - i) * rowHeight + rowHeight / 2;
     const x = branchBaseX;
+    //const y = height - i * rowHeight - rowHeight / 2;
     let level = 1;
     let color = '#f97316';
 
     if (util.isMain(commit.sha, mainLine)) {
       lastMainCommit = commit;
-    } else if (lastMainCommit) {
-      loop = loops.get(lastMainCommit.sha);
-      if (loop && loop.annotatedPath) {
-        pathNode = loop.annotatedPath.find((el) => el.sha === commit.sha);
+    } else {
+      const loop = [...loops.entries()].find(([key, value]) => {
+        return value.forkPath.includes(commit.sha);
+      });
+      const [mergeSha, loopData] = loop;
+      if (loop && loopData && loopData.annotatedPath) {
+        pathNode = loopData.annotatedPath.find((el) => el.sha === commit.sha);
         color = pathNode.color;
         level = pathNode.level + 1;
 
-        if (!forkPathDrawn.find((el) => el === lastMainCommit.sha)) {
+        if (!forkPathDrawn.find((el) => el === mergeSha)) {
           drawForkLigns(
             svg,
-            loop.annotatedPath,
-            loop.color ? loop.color : '#fff',
+            loopData.annotatedPath,
+            loopData.color ? loopData.color : '#fff',
             branchBaseX,
             branchBaseX,
             rowHeight,
@@ -98,7 +101,7 @@ export async function renderCommitTree(
           );
         }
       }
-      forkPathDrawn.push(lastMainCommit.sha);
+      forkPathDrawn.push(mergeSha);
     }
 
     drawCircle(
@@ -111,7 +114,6 @@ export async function renderCommitTree(
       y,
       color
     );
-    commitIndex++;
   });
 
   // Metadata cards
