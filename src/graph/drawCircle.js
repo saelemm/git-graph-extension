@@ -22,14 +22,13 @@ export function drawCircle(
   const dayStr = date.getDate();
   let headString = '';
   const branchName = matchingBranch ? `[${matchingBranch.name}]` : '';
-  const HEAD = matchingBranch ? `[HEAD]` : '';
-  if (HEAD) {
-    headString = `${commit.sha.slice(0, 2)} ${HEAD}  ${branchName}`;
+  if (matchingBranch) {
+    headString = `${commit.sha.slice(0, 2)} ${branchName}`;
     if (headString.length > 22) {
-      headString = headString.slice(0, 22) + '...';
+      headString = headString.slice(0, 20) + '...';
     }
   }
-  const message = HEAD ? headString : commit.sha.slice(0, 2);
+  const message = matchingBranch ? headString : commit.sha.slice(0, 2);
   if (!dates.has(dateString)) {
     svg
       .append('text')
