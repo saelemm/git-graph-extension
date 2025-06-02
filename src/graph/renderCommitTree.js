@@ -57,7 +57,7 @@ export async function renderCommitTree(
     mainLine
   );
 
-  console.log(loops);
+  // console.log(loops);
 
   // Drawing graph
   let y = height - (commits.size - commitIndex) * rowHeight + rowHeight / 2;

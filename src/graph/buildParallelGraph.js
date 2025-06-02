@@ -73,10 +73,6 @@ export function buildLoopsDependency(
     for (let i = beginLoop; i >= 0; i--) {
       const commit = sortedCommits[i];
       const sha = commit.sha;
-      console.log(
-        `Building path for ${sha} | is main ${util.isMain(sha, mainLine)}  | is merge ${util.isMerge(commit)} | is fork ${util.isFork(commit)}`
-      );
-
       if (sha === forkSha) break;
 
       let isFork = false;
@@ -89,11 +85,9 @@ export function buildLoopsDependency(
 
       // If main is a fork, reduce level by 1
       if (forkLevel > 1 && util.isMain(sha, mainLine) && util.isFork(commit)) {
-        console.log(`Lowering with ${sha}`);
         forkLevel--;
         // If main is a merge, add level by 1 at the next iteration
       } else if (util.isMain(sha, mainLine) && util.isMerge(commit)) {
-        console.log(`Increasing with ${sha}`);
         previousIncrease = true;
       }
 
@@ -126,18 +120,18 @@ export function buildLoopsDependency(
     });
 
     // 🔍 Optional log
-    console.log(`\n📌 Loop from merge ${mergeSha}`);
-    annotatedPath.forEach(({ sha, isFork, isPartOfLoop, level }, index) => {
-      const indent = '\t'.repeat(level);
-      const label = isFork
-        ? '🌿 Fork'
-        : isPartOfLoop
-          ? '🔷 Main'
-          : '❌ Not Part';
-      console.log(
-        `${indent}${index}. ${label} | Level: ${level} | SHA: ${sha.slice(0, 5)}`
-      );
-    });
+    // console.log(`\n📌 Loop from merge ${mergeSha}`);
+    // annotatedPath.forEach(({ sha, isFork, isPartOfLoop, level }, index) => {
+    //   const indent = '\t'.repeat(level);
+    //   const label = isFork
+    //     ? '🌿 Fork'
+    //     : isPartOfLoop
+    //       ? '🔷 Main'
+    //       : '❌ Not Part';
+    //   console.log(
+    //     `${indent}${index}. ${label} | Level: ${level} | SHA: ${sha.slice(0, 5)}`
+    //   );
+    // });
 
     // 🗂 Store in Map
     loopMap.set(mergeSha, {

@@ -24,8 +24,8 @@ export async function fetchArtifacts(owner, repo) {
       }
     );
 
-    console.log(`✅ Fetched ${response.data.length} artifacts`);
-    console.log(response.data);
+    //console.log(`✅ Fetched ${response.data.length} artifacts`);
+    // console.log(response.data);
     return response.data;
   } catch (err) {
     console.error(`❌ GitHub API error:`, err);

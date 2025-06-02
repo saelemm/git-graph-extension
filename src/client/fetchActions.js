@@ -24,8 +24,8 @@ export async function fetchActions(owner, repo) {
       }
     );
 
-    console.log(`✅ Fetched ${response.data.length} actions`);
-    console.log(response.data);
+    // console.log(`✅ Fetched ${response.data.length} actions`);
+    // console.log(response.data);
     return response.data;
   } catch (err) {
     console.error(`❌ GitHub API error:`, err);

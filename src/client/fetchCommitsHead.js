@@ -19,8 +19,8 @@ export async function fetchCommitsHead(owner, repo) {
       per_page: 100,
     });
 
-    console.log(`✅ Fetched ${response.data.length} heads`);
-    console.log(response.data);
+    // console.log(`✅ Fetched ${response.data.length} heads`);
+    // console.log(response.data);
     return response.data;
   } catch (err) {
     console.error(`❌ GitHub API error:`, err);

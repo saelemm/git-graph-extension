@@ -1,6 +1,39 @@
 import { addGraphPage } from './addGraphPage.js';
 
-export function addTabLink() {
+async function reinjectNavBarWhenReady() {
+  const interval = setInterval(() => {
+    const existing = document.querySelector('.AppHeader-localBar');
+    const targetDiv = document.querySelector('div.AppHeader-globalBar');
+    const saved = sessionStorage.getItem('savedNav');
+
+    if (!existing && targetDiv && saved) {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = saved;
+      const clone = wrapper.firstElementChild;
+
+      if (clone) {
+        targetDiv.insertAdjacentElement('afterend', clone);
+        console.log('✅ Navbar re-injected from sessionStorage');
+      }
+
+      clearInterval(interval);
+    }
+  }, 100);
+
+  setTimeout(() => clearInterval(interval), 5000);
+}
+
+export async function addTabLink() {
+  const navWrapper = document.querySelector('.AppHeader-localBar');
+
+  // Save only once
+  if (navWrapper && !sessionStorage.getItem('savedNav')) {
+    const cloneHtml = navWrapper.outerHTML;
+    sessionStorage.setItem('savedNav', cloneHtml);
+    console.log('✅ Navbar HTML saved to sessionStorage!');
+  } else {
+    await reinjectNavBarWhenReady();
+  }
   console.log('🔍 Checking for repo nav to inject Git Graph tab...');
 
   // Find the repository nav bar UL using GitHub's consistent class
@@ -14,7 +47,6 @@ export function addTabLink() {
   // Ensure we don't double-inject
   if (document.querySelector('#graph-tab')) {
     console.log('⛔ Graph tab already exists.');
-
     return;
   }
 

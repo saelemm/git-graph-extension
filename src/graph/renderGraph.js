@@ -2,9 +2,6 @@ import { fetchCommits } from '../client/fetchCommits.js';
 import { fetchBranches } from '../client/fetchBranches.js';
 import { fetchActions } from '../client/fetchActions.js';
 import { fetchArtifacts } from '../client/fetchArtifacts.js';
-import { fetchCommitsHead } from '../client/fetchCommitsHead.js';
-import { fetchForks } from '../client/fetchForks.js';
-import { fetchRepo } from '../client/fetchRepo.js';
 import { buildCommitTree } from './buildCommitTree.js';
 import { renderCommitTree } from './renderCommitTree.js';
 
