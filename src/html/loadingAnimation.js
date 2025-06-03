@@ -1,4 +1,4 @@
-export function loadingSkeleton() {
+export function loadingAnimation() {
   const html = `
   <div id="loaderContainer">
     <div height="800px" width="100%" class="loader"></div>
@@ -31,6 +31,7 @@ export function loadingSkeleton() {
   `;
 
   const wrapper = document.createElement('div');
+  wrapper.id = 'loaderWrapper';
   wrapper.innerHTML = html;
 
   const styleEl = document.createElement('style');

@@ -1,4 +1,5 @@
 import { fetchCommits } from '../client/fetchCommits.js';
+import { loadingAnimation } from '../html/loadingAnimation.js';
 
 /**
  * Adds "Load More" button and fetches new commits on click.
@@ -38,6 +39,9 @@ export function loadNext(owner, repo, onNewCommits) {
     olderButton.addEventListener('click', async (e) => {
       e.preventDefault();
       try {
+        const nextButton = document.getElementById('nextButtonWrapper');
+        nextButton.appendChild(loadingAnimation());
+
         const newCommits = await fetchCommits(owner, repo, page);
         page++;
         if (Array.isArray(newCommits) && typeof onNewCommits === 'function') {

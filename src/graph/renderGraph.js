@@ -1,6 +1,6 @@
 import { buildCommitTree } from './buildCommitTree.js';
 import { renderCommitTree } from './renderCommitTree.js';
-import { loadingSkeleton } from '../html/loadingSkeleton.js';
+import { loadingSkeleton } from '../html/loadingAnimation.js';
 
 export async function renderGraph(
   container,
@@ -10,13 +10,6 @@ export async function renderGraph(
   artifacts = []
 ) {
   if (!container) return;
-
-  // const [branches, actions, artifacts] = await Promise.all([
-  //   fetchBranches(owner, repo),
-  //   fetchActions(owner, repo),
-  //   fetchArtifacts(owner, repo),
-  // ]);
-
   container.innerHTML = '';
 
   // Adjust layout to ensure vertical rendering
