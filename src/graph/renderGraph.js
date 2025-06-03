@@ -4,18 +4,20 @@ import { fetchActions } from '../client/fetchActions.js';
 import { fetchArtifacts } from '../client/fetchArtifacts.js';
 import { buildCommitTree } from './buildCommitTree.js';
 import { renderCommitTree } from './renderCommitTree.js';
+import { loadingSkeleton } from '../html/loadingSkeleton.js';
 
 export async function renderGraph(container, owner, repo) {
-  const commits = await fetchCommits(owner, repo);
-  const branches = await fetchBranches(owner, repo);
-  const actions = await fetchActions(owner, repo);
-  const artifacts = await fetchArtifacts(owner, repo);
-
-  //const repoInfo = await fetchRepo(owner, repo);
-
-  //const commitsHead = await fetchCommitsHead(owner, repo);
-  //const forks = await fetchForks(owner, repo);
   if (!container) return;
+
+  container.innerHTML = '';
+  container.appendChild(loadingSkeleton());
+
+  const [commits, branches, actions, artifacts] = await Promise.all([
+    fetchCommits(owner, repo),
+    fetchBranches(owner, repo),
+    fetchActions(owner, repo),
+    fetchArtifacts(owner, repo),
+  ]);
 
   container.innerHTML = '';
 
