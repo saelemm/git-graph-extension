@@ -6,14 +6,10 @@ import { buildCommitTree } from './buildCommitTree.js';
 import { renderCommitTree } from './renderCommitTree.js';
 import { loadingSkeleton } from '../html/loadingSkeleton.js';
 
-export async function renderGraph(container, owner, repo) {
+export async function renderGraph(container, owner, repo, commits = []) {
   if (!container) return;
 
-  container.innerHTML = '';
-  container.appendChild(loadingSkeleton());
-
-  const [commits, branches, actions, artifacts] = await Promise.all([
-    fetchCommits(owner, repo),
+  const [branches, actions, artifacts] = await Promise.all([
     fetchBranches(owner, repo),
     fetchActions(owner, repo),
     fetchArtifacts(owner, repo),

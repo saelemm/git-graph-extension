@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest';
 
-export async function fetchCommits(owner, repo) {
+export async function fetchCommits(owner, repo, page = 1) {
   const token = import.meta.env.VITE_GITHUB_TOKEN;
 
   if (!token) {
@@ -17,6 +17,7 @@ export async function fetchCommits(owner, repo) {
       owner,
       repo,
       per_page: 100,
+      page: page,
     });
 
     // console.log(`✅ Fetched ${response.data.length} commits`);

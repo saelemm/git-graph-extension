@@ -1,7 +1,10 @@
 import { renderGraph } from '../graph/renderGraph.js';
 import { getRepoInfo } from './getRepoInfo.js';
+import { loadNext } from '../html/loadNext.js';
+import { fetchCommits } from '../client/fetchCommits.js';
+import { loadingSkeleton } from '../html/loadingSkeleton.js';
 
-export function addGraphPage() {
+export async function addGraphPage() {
   if (!/\/graphs\/git-graph$/.test(location.pathname)) return;
 
   console.log('Rendering Git Graph page');
@@ -20,7 +23,7 @@ export function addGraphPage() {
   graphPage.id = 'git graph';
   graphPage.innerHTML = `
     <h2 style="display:flex; align-item: center; margin: 1rem;">Git Graph</h2>
-    <div id="git-graph-container"  style="height: 100%; display:flex;"></div>
+    <div id="git-graph-container" style="height: 100%; display:flex;"></div>
   `;
   main.appendChild(graphPage);
 
@@ -28,10 +31,30 @@ export function addGraphPage() {
 
   const { owner, repo } = getRepoInfo();
   const graphContainer = document.getElementById('git-graph-container');
+  graphContainer.innerHTML = '';
+  graphContainer.appendChild(loadingSkeleton());
+  const page = 1;
+  let commits = await fetchCommits(owner, repo, page);
 
   if (graphContainer) {
-    renderGraph(graphContainer, owner, repo);
+    renderGraph(graphContainer, owner, repo, commits);
   } else {
     console.error('Could not find graph container');
   }
+
+  // Add next page
+  main.appendChild(
+    loadNext(owner, repo, (newCommits) => {
+      //console.log('Fetched new commits:', newCommits);
+
+      newCommits.forEach((element) => {
+        commits.push(element);
+      });
+
+      const graphContainer = document.getElementById('git-graph-container');
+      if (graphContainer && newCommits.length > 0) {
+        renderGraph(graphContainer, owner, repo, commits); // Update renderGraph to accept optional new data
+      }
+    })
+  );
 }
