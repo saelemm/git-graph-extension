@@ -170,9 +170,6 @@ export async function renderCommitTree(
       .attr('style', 'border-bottom: 1px solid rgba(255, 255, 255, 0.1);')
       .append('xhtml:div')
       .style('display', 'flex')
-      .on('click', function () {
-        window.open(commitUrl, '_blank');
-      })
       .on('mouseover', function () {
         d3.select(this)
           .transition()
