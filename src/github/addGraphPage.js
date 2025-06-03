@@ -2,6 +2,9 @@ import { renderGraph } from '../graph/renderGraph.js';
 import { getRepoInfo } from './getRepoInfo.js';
 import { loadNext } from '../html/loadNext.js';
 import { fetchCommits } from '../client/fetchCommits.js';
+import { fetchBranches } from '../client/fetchBranches.js';
+import { fetchActions } from '../client/fetchActions.js';
+import { fetchArtifacts } from '../client/fetchArtifacts.js';
 import { loadingSkeleton } from '../html/loadingSkeleton.js';
 
 export async function addGraphPage() {
@@ -33,11 +36,16 @@ export async function addGraphPage() {
   const graphContainer = document.getElementById('git-graph-container');
   graphContainer.innerHTML = '';
   graphContainer.appendChild(loadingSkeleton());
-  const page = 1;
-  let commits = await fetchCommits(owner, repo, page);
+
+  const [commits, branches, actions, artifacts] = await Promise.all([
+    fetchCommits(owner, repo, 1),
+    fetchBranches(owner, repo),
+    fetchActions(owner, repo),
+    fetchArtifacts(owner, repo),
+  ]);
 
   if (graphContainer) {
-    renderGraph(graphContainer, owner, repo, commits);
+    renderGraph(graphContainer, commits, branches, actions, artifacts);
   } else {
     console.error('Could not find graph container');
   }
@@ -54,7 +62,7 @@ export async function addGraphPage() {
 
         const graphContainer = document.getElementById('git-graph-container');
         if (graphContainer && newCommits.length > 0) {
-          renderGraph(graphContainer, owner, repo, commits);
+          renderGraph(graphContainer, commits, branches, actions, artifacts);
           if (commits.length % 100 != 0) {
             const nextButton = document.getElementById('nextButtonWrapper');
             main.removeChild(nextButton);

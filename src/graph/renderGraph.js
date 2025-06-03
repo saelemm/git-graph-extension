@@ -1,19 +1,21 @@
-import { fetchCommits } from '../client/fetchCommits.js';
-import { fetchBranches } from '../client/fetchBranches.js';
-import { fetchActions } from '../client/fetchActions.js';
-import { fetchArtifacts } from '../client/fetchArtifacts.js';
 import { buildCommitTree } from './buildCommitTree.js';
 import { renderCommitTree } from './renderCommitTree.js';
 import { loadingSkeleton } from '../html/loadingSkeleton.js';
 
-export async function renderGraph(container, owner, repo, commits = []) {
+export async function renderGraph(
+  container,
+  commits = [],
+  branches = [],
+  actions = [],
+  artifacts = []
+) {
   if (!container) return;
 
-  const [branches, actions, artifacts] = await Promise.all([
-    fetchBranches(owner, repo),
-    fetchActions(owner, repo),
-    fetchArtifacts(owner, repo),
-  ]);
+  // const [branches, actions, artifacts] = await Promise.all([
+  //   fetchBranches(owner, repo),
+  //   fetchActions(owner, repo),
+  //   fetchArtifacts(owner, repo),
+  // ]);
 
   container.innerHTML = '';
 
