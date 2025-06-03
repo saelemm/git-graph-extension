@@ -43,18 +43,24 @@ export async function addGraphPage() {
   }
 
   // Add next page
-  main.appendChild(
-    loadNext(owner, repo, (newCommits) => {
-      //console.log('Fetched new commits:', newCommits);
+  if (commits.length % 100 === 0) {
+    main.appendChild(
+      loadNext(owner, repo, (newCommits) => {
+        //console.log('Fetched new commits:', newCommits);
 
-      newCommits.forEach((element) => {
-        commits.push(element);
-      });
+        newCommits.forEach((element) => {
+          commits.push(element);
+        });
 
-      const graphContainer = document.getElementById('git-graph-container');
-      if (graphContainer && newCommits.length > 0) {
-        renderGraph(graphContainer, owner, repo, commits); // Update renderGraph to accept optional new data
-      }
-    })
-  );
+        const graphContainer = document.getElementById('git-graph-container');
+        if (graphContainer && newCommits.length > 0) {
+          renderGraph(graphContainer, owner, repo, commits);
+          if (commits.length % 100 != 0) {
+            const nextButton = document.getElementById('nextButtonWrapper');
+            main.removeChild(nextButton);
+          }
+        }
+      })
+    );
+  }
 }
