@@ -104,7 +104,6 @@ export function buildLoopsDependency(
 
       // If main is a fork, reduce level by 1
       if (forkLevel > 1 && util.isMain(sha, mainLine) && util.isFork(commit)) {
-        console.log(`I AM AT : ${sha.slice(0, 7)}`);
         for (let i = 1; i < commit.children.length; i++) {
           if (
             isGivenShaAfterCompareSha(
