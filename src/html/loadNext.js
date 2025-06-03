@@ -39,8 +39,8 @@ export function loadNext(owner, repo, onNewCommits) {
     olderButton.addEventListener('click', async (e) => {
       e.preventDefault();
       try {
-        const nextButton = document.getElementById('nextButtonWrapper');
-        nextButton.appendChild(loadingAnimation());
+        //const nextButton = document.getElementById('nextButtonWrapper');
+        wrapper.appendChild(loadingAnimation());
 
         const newCommits = await fetchCommits(owner, repo, page);
         page++;
