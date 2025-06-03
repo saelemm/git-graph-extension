@@ -116,8 +116,6 @@ export function buildLoopsDependency(
             forkLevel--;
           }
         }
-
-        // forkLevel = forkLevel - (util.getForkLevel(commit) - 1);
         if (forkLevel < 1) {
           forkLevel = 1;
         }
