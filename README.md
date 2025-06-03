@@ -2,6 +2,8 @@
 
 Visualize your Git repository's commit history and branches directly in the browser using `gitgraph.js` and the GitHub API.
 
+![alt text](./public/image.png)
+
 ## 🚀 Features
 
 - Interactive, visual Git commit history
