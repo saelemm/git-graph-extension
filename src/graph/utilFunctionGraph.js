@@ -12,6 +12,10 @@ export function isFork(co) {
   return co.children.length > 1;
 }
 
+export function getForkLevel(co) {
+  return co.children.length;
+}
+
 export function isMain(sha, mainLine) {
   return mainLine.includes(sha);
 }

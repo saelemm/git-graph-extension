@@ -1,5 +1,24 @@
 import * as util from './utilFunctionGraph';
 
+function isGivenShaAfterCompareSha(givenSha, compareSha, loopMap, commits) {
+  for (const [mergeSha, loopData] of loopMap.entries()) {
+    if (loopData.forkPath.includes(givenSha)) {
+      const mSha = loopData.mergeSha;
+      const commitKeys = [...commits.keys()];
+      const givenIndex = commitKeys.indexOf(mSha);
+      const compareIndex = commitKeys.indexOf(compareSha);
+
+      if (givenIndex === -1 || compareIndex === -1) {
+        return null;
+      }
+
+      return givenIndex > compareIndex;
+    }
+  }
+
+  return true;
+}
+
 /**
  * Recursively builds loop data for each merge commit and stores them in a Map.
  * @param {*} startCommit - The latest commit to start from.
@@ -85,9 +104,28 @@ export function buildLoopsDependency(
 
       // If main is a fork, reduce level by 1
       if (forkLevel > 1 && util.isMain(sha, mainLine) && util.isFork(commit)) {
-        forkLevel--;
+        console.log(`I AM AT : ${sha.slice(0, 7)}`);
+        for (let i = 1; i < commit.children.length; i++) {
+          if (
+            isGivenShaAfterCompareSha(
+              commit.children[i].sha,
+              mergeSha,
+              loopMap,
+              commits
+            )
+          ) {
+            forkLevel--;
+          }
+        }
+
+        // forkLevel = forkLevel - (util.getForkLevel(commit) - 1);
+        if (forkLevel < 1) {
+          forkLevel = 1;
+        }
         // If main is a merge, add level by 1 at the next iteration
-      } else if (util.isMain(sha, mainLine) && util.isMerge(commit)) {
+      }
+
+      if (util.isMain(sha, mainLine) && util.isMerge(commit)) {
         previousIncrease = true;
       }
 
